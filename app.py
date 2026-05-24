@@ -1,4 +1,19 @@
 import streamlit as st
+from datetime import datetime, timedelta
+
+# نظام المزامنة الذكي
+if 'time_offset' not in st.session_state:
+    st.session_state.time_offset = 0
+
+st.sidebar.subheader("⚙️ ضبط وقت البوت مع المنصة")
+# المزلاق يسمح لك بتعديل الوقت من -5 إلى +5 ثوانٍ
+st.session_state.time_offset = st.sidebar.slider("فرق التوقيت (بالثواني):", -5, 5, 0)
+
+def get_accurate_time():
+    # حساب الوقت الحالي مع إضافة الفرق الذي اخترته أنت
+    return datetime.now() + timedelta(seconds=st.session_state.time_offset)
+
+import streamlit as st
 import time
 from datetime import datetime, timedelta
 import random
