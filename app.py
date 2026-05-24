@@ -4,22 +4,25 @@ import random
 from datetime import datetime, timedelta
 
 # --- إعدادات النظام ---
-st.set_page_config(page_title="Professional 4-Filter System", layout="wide")
-st.title("🎯 نظام التداول الرباعي (SR Breaks + Chello + Chandelier + Trend)")
+st.set_page_config(page_title="Pro Full-OTC Analyzer", layout="wide")
+st.title("🎯 نظام التداول الرباعي الشامل (جميع أزواج OTC)")
 
 # إعداد الوقت (UTC+3)
 platform_time = datetime.utcnow() + timedelta(hours=3)
 st.sidebar.write(f"🕒 توقيت المنصة: **{platform_time.strftime('%H:%M')}**")
 
-# --- محاكاة المؤشرات الرباعية ---
+# قائمة بجميع أزواج الـ OTC المتاحة
+otc_pairs = [
+    "EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC",
+    "AUDCAD OTC", "EURJPY OTC", "GBPJPY OTC", "NZDUSD OTC", "AUDJPY OTC"
+]
+
+# --- محاكاة المؤشرات الرباعية لكل الأزواج ---
 def get_market_data():
     data = []
-    pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
-    for pair in pairs:
+    for pair in otc_pairs:
         price = random.uniform(1.0500, 1.1000)
-        # المؤشر الجديد: SR Breaks
         sr_break = random.choice(["Breakout Up", "Breakout Down", "None"])
-        # المؤشرات السابقة
         chandelier = random.choice(["Bullish", "Bearish"])
         chello = random.choice(["Strong Buy", "Strong Sell", "Neutral"])
         
@@ -39,7 +42,7 @@ def get_market_data():
 def analyze_combined_system(df):
     results = []
     for _, row in df.iterrows():
-        # الفلترة الرباعية: لن يظهر القرار إلا إذا اتفقت الأربعة معاً
+        # الفلترة الرباعية الصارمة
         if (row['SR Breaks'] == "Breakout Up" and 
             row['Chandelier'] == "Bullish" and 
             row['Chello Pro'] == "Strong Buy"):
@@ -55,23 +58,21 @@ def analyze_combined_system(df):
     return pd.DataFrame(results)
 
 # --- الواجهة ---
-if st.button("🚀 تحليل فني دقيق (نظام الدمج الرباعي)"):
+if st.button("🚀 ابدأ مسح جميع أزواج OTC"):
     market_df = get_market_data()
     final_df = analyze_combined_system(market_df)
     
-    # عرض النتائج
+    # عرض النتائج القوية فقط من جميع الأزواج
     display_df = final_df[final_df['القرار'] != "⚪ انتظار"]
     
     if not display_df.empty:
         st.table(display_df[['الزوج', 'السعر', 'SR Breaks', 'Chandelier', 'Chello Pro', 'القرار', 'وقت الانتهاء']])
-        st.success("تم تأكيد الصفقات بناءً على دمج 4 مؤشرات فنية احترافية.")
+        st.success("تم العثور على فرص قوية في قائمة الـ OTC الشاملة.")
     else:
-        st.warning("لا توجد فرص مطابقة للشروط الرباعية.. الانتظار هو مفتاح الأمان.")
+        st.warning("لا توجد فرص مطابقة للشروط الرباعية في أي من الأزواج حالياً.. السوق هادئ.")
 
 st.markdown("""
-### كيف يعمل هذا النظام؟
-* **SR Breaks:** يحدد بداية الاختراق الحقيقي للسعر.
-* **Chandelier:** يحميك من الانعكاسات المفاجئة.
-* **Chello Pro:** يؤكد زخم وقوة الحركة.
-* **القاعدة:** لا يتم عرض أي صفقة ما لم تتفق المؤشرات الثلاثة الرئيسية مع إشارة الاختراق (SR).
+### ملاحظة للمتداول:
+* هذا الكود الآن يمسح **10 أزواج** في آن واحد.
+* **قاعدة ذهبية:** لا تفتح أكثر من صفقة واحدة في نفس التوقيت، حتى لو ظهرت إشارات في أزواج مختلفة، لتجنب تشتت رأس المال.
 """)
