@@ -3,9 +3,9 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 st.set_page_config(page_title="OTC Session", layout="wide")
-st.title("🎯 جدول الصفقات (توقيت إغلاق الشمعة)")
+st.title("🎯 جدول صفقات الـ OTC (بالإشارات)")
 
-# عرض الوقت الحالي بدون ثواني
+# عرض الوقت الحالي
 st.metric("⏰ الوقت الحالي", datetime.now().strftime("%H:%M"))
 
 otc_list = [
@@ -15,22 +15,24 @@ otc_list = [
     "GBPCAD OTC", "EURAUD OTC", "GBPAUD OTC", "NZDJPY OTC", "AUDCAD OTC"
 ]
 
-if st.button("🚀 استخراج جدول الصفقات (بدون ثواني)"):
-    # نبدأ من الوقت الحالي بالدقيقة (تجاهل الثواني)
+if st.button("🚀 استخراج جدول الصفقات"):
     start_time = datetime.now().replace(second=0, microsecond=0)
     
     data = []
     for i in range(1, 11):
-        # إضافة 3 دقائق لكل صفقة
         trade_time = start_time + timedelta(minutes=3 * (i - 1))
         pair = otc_list[(i-1) % len(otc_list)]
         
-        # تنسيق الوقت بدون ثواني (%H:%M)
-        data.append([i, pair, trade_time.strftime('%H:%M')])
+        # وضع إشارة خضراء للصعود وحمراء للهبوط بالتناوب
+        signal = "🟢 صعود (BUY)" if i % 2 != 0 else "🔴 هبوط (SELL)"
+        
+        data.append([i, pair, trade_time.strftime('%H:%M'), signal])
     
-    df = pd.DataFrame(data, columns=["الصفقة", "الزوج", "وقت الدخول"])
+    # عرض الجدول
+    df = pd.DataFrame(data, columns=["رقم الصفقة", "الزوج", "وقت الدخول", "نوع الإشارة"])
     st.table(df)
-    st.success("تم ضبط الجدول على توقيت إغلاق الشمعة.")
+    
+    st.success("الجدول جاهز! 🟢 صعود و 🔴 هبوط.")
 
 if st.button("🔄 تحديث الوقت"):
     st.rerun()
