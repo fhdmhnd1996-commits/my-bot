@@ -6,6 +6,10 @@ st.set_page_config(page_title="Signal Bot Pro", layout="wide")
 
 st.title("🎯 محرك إشارات التداول (20 زوج OTC)")
 
+# 1. تعريف القائمة في الذاكرة (لحل مشكلة NameError)
+if 'signals' not in st.session_state:
+    st.session_state.signals = []
+
 # قائمة بـ 20 زوج OTC
 otc_pairs = [
     "EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC",
@@ -33,13 +37,16 @@ if st.sidebar.button("ابدأ تحليل السوق"):
     else:
         st.error(f"القرار: {signal} | نسبة النجاح المتوقعة: {confidence}%")
         
+    # إضافة الإشارة للسجل بعد التحقق من وجودها
+    st.session_state.signals.append({"الزوج": pair, "الإشارة": signal})
+    
     st.write("---")
     st.write("👉 افتح منصة Pocket Option الآن ونفذ الصفقة يدوياً!")
 
-# سجل الإشارات
-if 'signals' not in st.session_state:
-    st.session_state.signals = []
-
-# إضافة الإشارة للسجل
-st.session_state.signals.append({"الزوج": pair, "الإشارة": signal})
-st.table(pd.DataFrame(st.session_state.signals).tail(5))
+# عرض السجل
+st.markdown("---")
+st.subheader("📝 سجل الإشارات الأخيرة")
+if len(st.session_state.signals) > 0:
+    st.table(pd.DataFrame(st.session_state.signals).tail(5))
+else:
+    st.write("لا توجد إشارات حتى الآن.")
