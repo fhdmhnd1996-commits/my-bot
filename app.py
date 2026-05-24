@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-import time
+from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Live OTC Session", layout="wide")
-st.title("🎯 نظام الجلسة المباشر (OTC Pro)")
+st.set_page_config(page_title="OTC Session", layout="wide")
+st.title("🎯 نظام الصفقات المجدولة (OTC Pro)")
 
-# 1. عرض الوقت المباشر (متحرك)
-placeholder = st.empty()
+# عرض الوقت الحالي
+st.metric("⏰ وقت السيرفر الحالي", datetime.now().strftime("%H:%M:%S"))
 
 # قائمة الـ 20 زوجاً
 otc_list = [
@@ -17,22 +16,20 @@ otc_list = [
     "GBPCAD OTC", "EURAUD OTC", "GBPAUD OTC", "NZDJPY OTC", "AUDCAD OTC"
 ]
 
-# تحديث الساعة بشكل مستمر
-while True:
-    now = datetime.now()
-    placeholder.metric("⏰ التوقيت الحالي للسيرفر", now.strftime("%H:%M:%S"))
+if st.button("🚀 استخراج جدول الـ 10 صفقات القادمة"):
+    # يبدأ من الوقت الحالي بالضبط
+    start_time = datetime.now()
     
-    # منطق جدول الـ 10 صفقات
-    if st.button("🚀 عرض جدول الصفقات بناءً على الوقت الحالي"):
-        start_time = now.replace(second=0, microsecond=0)
-        data = []
-        for i in range(1, 11):
-            trade_time = start_time + pd.Timedelta(minutes=3 * (i - 1))
-            pair = otc_list[(i-1) % len(otc_list)]
-            data.append([i, pair, trade_time.strftime('%H:%M:%S')])
-        
-        df = pd.DataFrame(data, columns=["الصفقة", "الزوج", "وقت الدخول"])
-        st.table(df)
-        break # الخروج من اللوب بعد عرض الجدول
+    data = []
+    for i in range(1, 11):
+        trade_time = start_time + timedelta(minutes=3 * (i - 1))
+        pair = otc_list[(i-1) % len(otc_list)]
+        data.append([i, pair, trade_time.strftime('%H:%M:%S')])
     
-    time.sleep(1) # تحديث كل ثانية
+    df = pd.DataFrame(data, columns=["الصفقة", "الزوج", "وقت الدخول"])
+    st.table(df)
+    st.success("تم تحديد المواعيد بدقة. ابدأ الجلسة الآن!")
+
+# زر تحديث يدوي لتحديث الساعة
+if st.button("🔄 تحديث الوقت"):
+    st.rerun()
