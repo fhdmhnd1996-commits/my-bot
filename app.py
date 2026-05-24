@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import random
 from datetime import datetime, timedelta
 
@@ -10,7 +9,7 @@ st.title("🎯 نظام التداول بدقيقة (SR + Chandelier)")
 
 # إعداد الوقت (UTC+3)
 platform_time = datetime.utcnow() + timedelta(hours=3)
-st.sidebar.write(f"🕒 توقيت المنصة: **{platform_time.strftime('%H:%M:%S')}**")
+st.sidebar.write(f"🕒 توقيت المنصة: **{platform_time.strftime('%H:%M')}**")
 
 # --- محاكاة المؤشرات ---
 def get_market_data():
@@ -21,29 +20,28 @@ def get_market_data():
         sr_signal = random.choice(["Breakout Up", "Breakout Down", "None"])
         chandelier_trend = random.choice(["Bullish", "Bearish"])
         
-        # إضافة وقت انتهاء الصفقة بعد دقيقة واحدة من الآن
-        expiry_time = (platform_time + timedelta(minutes=1)).strftime('%H:%M:%S')
+        # وقت الانتهاء: بعد دقيقة واحدة (بالساعة والدقيقة فقط)
+        expiry_time = (platform_time + timedelta(minutes=1)).strftime('%H:%M')
         
         data.append({
-            "Pair": pair, 
-            "Price": f"{price:.4f}", 
-            "SR_Signal": sr_signal, 
-            "Trend": chandelier_trend,
-            "Expiry": expiry_time
+            "الزوج": pair, 
+            "السعر": f"{price:.4f}", 
+            "إشارة SR": sr_signal, 
+            "الاتجاه": chandelier_trend,
+            "وقت الانتهاء": expiry_time
         })
     return pd.DataFrame(data)
 
-# --- منطق الدمج (الفلترة القوية) ---
+# --- منطق الدمج ---
 def analyze_combined_system(df):
     results = []
     for _, row in df.iterrows():
-        # شرط الدخول: اختراق + ترند مؤكد
-        if row['SR_Signal'] == "Breakout Up" and row['Trend'] == "Bullish":
-            row['Decision'] = "🟢 شراء (1M)"
-        elif row['SR_Signal'] == "Breakout Down" and row['Trend'] == "Bearish":
-            row['Decision'] = "🔴 بيع (1M)"
+        if row['إشارة SR'] == "Breakout Up" and row['الاتجاه'] == "Bullish":
+            row['القرار'] = "🟢 شراء (1M)"
+        elif row['إشارة SR'] == "Breakout Down" and row['الاتجاه'] == "Bearish":
+            row['القرار'] = "🔴 بيع (1M)"
         else:
-            row['Decision'] = "⚪ انتظار"
+            row['القرار'] = "⚪ انتظار"
         results.append(row)
     return pd.DataFrame(results)
 
@@ -52,17 +50,11 @@ if st.button("🚀 تحليل صفقات الدقيقة الواحدة"):
     market_df = get_market_data()
     final_df = analyze_combined_system(market_df)
     
-    # فلترة النتائج لعرض الفرص القوية فقط
-    final_df = final_df[final_df['Decision'] != "⚪ انتظار"]
+    # عرض الفرص القوية فقط
+    final_df = final_df[final_df['القرار'] != "⚪ انتظار"]
     
     if not final_df.empty:
-        st.table(final_df[['Pair', 'Price', 'Decision', 'Expiry']])
-        st.success("تم تحديد صفقات 1M القوية بناءً على الدمج الفني.")
+        st.table(final_df[['الزوج', 'السعر', 'القرار', 'وقت الانتهاء']])
+        st.success("تم تحديد صفقات 1M القوية بنجاح.")
     else:
         st.warning("لا توجد فرص قوية للدقيقة الواحدة حالياً.. انتظر اكتمال الاختراق.")
-
-st.markdown("""
-### ملاحظة هامة:
-* يتم حساب **وقت الانتهاء (Expiry)** تلقائياً بعد دقيقة واحدة من وقت الفحص.
-* النظام يفلتر السوق بناءً على تقاطع **SR Breaks** مع **Chandelier Exit**.
-""")
