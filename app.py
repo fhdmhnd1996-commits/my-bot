@@ -2,44 +2,39 @@ import streamlit as st
 import pandas as pd
 
 # إعداد واجهة احترافية
-st.set_page_config(layout="wide", page_title="Pocket Option OTC Bot")
+st.set_page_config(layout="wide", page_title="Pocket Option Auto-Trader")
 
-# 1. Header المنصة
-st.title("🚀 Pocket Option - Trading Terminal")
-st.markdown("---")
+st.title("🤖 منصة التداول الآلي - Pocket Option")
 
-# 2. تقسيم الواجهة
+# شريط جانبي لإدخال البيانات الحساسة (لا تحفظ البيانات داخل الكود)
+with st.sidebar:
+    st.header("👤 إعدادات الحساب")
+    pocket_id = st.text_input("أدخل رقم حسابك (Pocket Option ID):", type="password")
+    st.warning("تأكد من رقم الحساب قبل التشغيل.")
+
+# قسم إعدادات التداول
 col1, col2 = st.columns([1, 2])
 
 with col1:
     st.subheader("⚙️ إعدادات الصفقات")
-    # تم إضافة خيارات الـ OTC هنا
-    pair = st.selectbox("1. اسم الزوج:", [
-        "EUR/USD", "GBP/USD", "USD/JPY", "BTC/USD", 
-        "EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC"
+    pair = st.selectbox("اختر الزوج:", [
+        "EUR/USD", "GBP/USD", "EUR/USD OTC", "GBP/USD OTC"
     ])
-    value = st.number_input("2. قيمة الصفقة ($):", min_value=1.0, value=10.0)
-    sl = st.number_input("3. إيقاف الخسارة ($):", min_value=0.1, value=5.0)
-    tp = st.number_input("4. إيقاف الربح ($):", min_value=0.1, value=10.0)
+    amount = st.number_input("قيمة الصفقة ($):", min_value=1.0, value=10.0)
     
-    st.markdown("---")
-    
-    start_btn = st.button("✅ تشغيل التداول")
-    stop_btn = st.button("🛑 إيقاف التداول")
+    # زر التشغيل
+    if st.button("🚀 بدء التداول على الحساب"):
+        if pocket_id:
+            st.success(f"تم ربط الحساب: {pocket_id[:4]}****")
+            st.info(f"جاري مراقبة {pair}...")
+        else:
+            st.error("يرجى إدخال رقم الـ ID الخاص بحسابك أولاً.")
 
 with col2:
-    st.subheader("📊 الرادار (Live Radar)")
-    if start_btn:
-        st.success(f"البوت نشط الآن على زوج: {pair}")
-        st.write("ملاحظة: سوق الـ OTC يدار داخلياً بواسطة المنصة.")
-    elif stop_btn:
-        st.error("تم إيقاف النظام.")
-    else:
-        st.info("النظام في وضع الاستعداد.")
+    st.subheader("📊 لوحة المراقبة")
+    st.info("النظام جاهز للربط عبر الـ API.")
 
-# 3. سجل الصفقات
+# سجل الصفقات
 st.markdown("---")
-st.subheader("📝 سجل التداول")
-if 'history' not in st.session_state:
-    st.session_state.history = pd.DataFrame(columns=['الزوج', 'النتيجة', 'الربح'])
-st.table(st.session_state.history)
+st.subheader("📝 سجل الصفقات")
+st.table(pd.DataFrame(columns=['رقم الحساب', 'الزوج', 'الحالة']))
