@@ -2,54 +2,67 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import random
+from datetime import datetime, timedelta
 
 # --- إعدادات النظام ---
-st.set_page_config(page_title="Advanced SR + Chandelier System", layout="wide")
-st.title("🎯 نظام الدمج الاحترافي: SR Breaks + Chandelier Exit")
+st.set_page_config(page_title="Pro 1M OTC System", layout="wide")
+st.title("🎯 نظام التداول بدقيقة (SR + Chandelier)")
+
+# إعداد الوقت (UTC+3)
+platform_time = datetime.utcnow() + timedelta(hours=3)
+st.sidebar.write(f"🕒 توقيت المنصة: **{platform_time.strftime('%H:%M:%S')}**")
 
 # --- محاكاة المؤشرات ---
 def get_market_data():
-    # محاكاة بيانات السعر
     data = []
-    for pair in ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC"]:
+    pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
+    for pair in pairs:
         price = random.uniform(1.0500, 1.1000)
-        # SR Break: هل السعر اخترق مستوى؟
         sr_signal = random.choice(["Breakout Up", "Breakout Down", "None"])
-        # Chandelier Exit: هل نحن في اتجاه صعودي أم هبوطي؟
         chandelier_trend = random.choice(["Bullish", "Bearish"])
         
-        data.append({"Pair": pair, "Price": price, "SR_Signal": sr_signal, "Trend": chandelier_trend})
+        # إضافة وقت انتهاء الصفقة بعد دقيقة واحدة من الآن
+        expiry_time = (platform_time + timedelta(minutes=1)).strftime('%H:%M:%S')
+        
+        data.append({
+            "Pair": pair, 
+            "Price": f"{price:.4f}", 
+            "SR_Signal": sr_signal, 
+            "Trend": chandelier_trend,
+            "Expiry": expiry_time
+        })
     return pd.DataFrame(data)
 
-# --- منطق الدمج (هنا يكمن سر القوة) ---
+# --- منطق الدمج (الفلترة القوية) ---
 def analyze_combined_system(df):
     results = []
     for _, row in df.iterrows():
-        # شرط الدخول: اختراق مقاومة (Breakout Up) + اتجاه صعودي (Bullish)
+        # شرط الدخول: اختراق + ترند مؤكد
         if row['SR_Signal'] == "Breakout Up" and row['Trend'] == "Bullish":
-            signal = "🟢 شراء قوي (تأكيد مزدوج)"
-        # شرط الدخول: اختراق دعم (Breakout Down) + اتجاه هبوطي (Bearish)
+            row['Decision'] = "🟢 شراء (1M)"
         elif row['SR_Signal'] == "Breakout Down" and row['Trend'] == "Bearish":
-            signal = "🔴 بيع قوي (تأكيد مزدوج)"
+            row['Decision'] = "🔴 بيع (1M)"
         else:
-            signal = "⚪ انتظار (عدم توافق)"
-            
-        row['Final_Decision'] = signal
+            row['Decision'] = "⚪ انتظار"
         results.append(row)
     return pd.DataFrame(results)
 
 # --- الواجهة ---
-if st.button("🚀 تشغيل نظام الدمج (SR + Chandelier)"):
+if st.button("🚀 تحليل صفقات الدقيقة الواحدة"):
     market_df = get_market_data()
     final_df = analyze_combined_system(market_df)
     
-    st.table(final_df)
+    # فلترة النتائج لعرض الفرص القوية فقط
+    final_df = final_df[final_df['Decision'] != "⚪ انتظار"]
     
-    st.markdown("""
-    ### شرح استراتيجية الدمج:
-    * **SR Breaks:** يحدد "نقطة الانفجار السعري".
-    * **Chandelier Exit:** يحدد "الترند العام" ويحمي الصفقة من التذبذب.
-    * **القوة:** لن يتم عرض إشارة دخول إلا إذا اتفق المؤشران معاً. 
-    """)
-    st.success("تم تحليل السوق بدمج المؤشرين.")
+    if not final_df.empty:
+        st.table(final_df[['Pair', 'Price', 'Decision', 'Expiry']])
+        st.success("تم تحديد صفقات 1M القوية بناءً على الدمج الفني.")
+    else:
+        st.warning("لا توجد فرص قوية للدقيقة الواحدة حالياً.. انتظر اكتمال الاختراق.")
 
+st.markdown("""
+### ملاحظة هامة:
+* يتم حساب **وقت الانتهاء (Expiry)** تلقائياً بعد دقيقة واحدة من وقت الفحص.
+* النظام يفلتر السوق بناءً على تقاطع **SR Breaks** مع **Chandelier Exit**.
+""")
