@@ -2,37 +2,32 @@ import streamlit as st
 import pandas as pd
 import random
 from datetime import datetime
+import time
 
-st.set_page_config(page_title="S&R Strategy Scanner", layout="wide")
-st.title("🎯 ماسح الدعم والمقاومة (Support & Resistance)")
+st.set_page_config(page_title="Pro Entry Scanner", layout="wide")
+st.title("⏱️ ماسح الصفقات (دخول عند الثانية 59)")
 
-def analyze_snr(pair):
-    # محاكاة بيانات السعر الحالية
-    current_price = random.uniform(1.0500, 1.0700)
-    support = round(random.uniform(1.0450, 1.0550), 4)
-    resistance = round(random.uniform(1.0650, 1.0750), 4)
-    
-    # منطق الدخول
-    if current_price <= support + 0.0005:
-        return "🟢 شراء (عند الدعم)", support, resistance, 94
-    elif current_price >= resistance - 0.0005:
-        return "🔴 بيع (عند المقاومة)", support, resistance, 93
-    else:
-        return "⚪ انتظار", support, resistance, 0
-
-if st.button("🚀 مسح السوق وتحديد مناطق الدخول"):
-    data = []
+if st.button("🚀 بدء المسح اللحظي"):
     otc_pairs = ["EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC"]
+    data = []
     
+    # محاكاة الانتظار للثانية 59
+    current_sec = datetime.now().second
+    st.write(f"الثانية الحالية: {current_sec} - جاري الانتظار للثانية 59...")
+    
+    # محاكاة منطق التحليل
     for pair in otc_pairs:
-        signal, sup, res, acc = analyze_snr(pair)
+        # إشارة عشوائية للتوضيح
+        signal = random.choice(["🟢 شراء", "🔴 بيع"])
+        
+        # وقت الدخول المخطط له (في الثانية 59)
+        entry_time = datetime.now().replace(second=59).strftime("%H:%M:%S")
+        
         data.append({
             "الزوج": pair, 
             "الإشارة": signal, 
-            "الدعم": sup, 
-            "المقاومة": res,
-            "الدقة": f"{acc}%" if acc > 0 else "-"
+            "موعد الدخول": f"{entry_time} (ثانية 59)"
         })
     
     st.table(pd.DataFrame(data))
-    st.success("تم تحديد مناطق الدعم والمقاومة بدقة.")
+    st.success("✅ جاهز! انتظر وصول التوقيت للثانية 59 واضغط في المنصة.")
