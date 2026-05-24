@@ -1,23 +1,35 @@
-    @staticmethod
-    def apply_strategy(df):
-        # 1. زيادة حساسية EMA
-        df['EMA9'] = df['Close'].ewm(span=9, adjust=False).mean()
-        df['EMA21'] = df['Close'].ewm(span=21, adjust=False).mean()
+import streamlit as st
+import pandas as pd
+import yfinance as yf
+
+# إعدادات الواجهة
+st.set_page_config(page_title="Trading Bot", layout="centered")
+st.title("بوت التداول الاحترافي")
+
+# اختيار الزوج
+ticker = st.selectbox("اختر الزوج:", ["EURUSD=X", "GBPUSD=X", "JPY=X"])
+
+if st.button("تحليل السوق"):
+    try:
+        # جلب البيانات
+        df = yf.download(ticker, period="1d", interval="1m", progress=False)
         
-        # 2. تحسين دقة RSI
-        delta = df['Close'].diff()
-        gain = delta.clip(lower=0).rolling(window=14).mean()
-        loss = (-delta.clip(upper=0)).rolling(window=14).mean()
-        df['RSI'] = 100 - (100 / (1 + (gain / loss)))
-        
-        # 3. إشارة أقوى: شرط "الزخم" (Momentum)
-        # الإشارة فقط إذا كان هناك فرق واضح بين EMA9 و EMA21
-        df['Signal'] = 'Wait'
-        
-        # شراء: تقاطع صاعد + RSI تحت 35 (تشبع بيعي)
-        df.loc[(df['EMA9'] > df['EMA21']) & (df['RSI'] < 35), 'Signal'] = 'BUY'
-        
-        # بيع: تقاطع هابط + RSI فوق 65 (تشبع شرائي)
-        df.loc[(df['EMA9'] < df['EMA21']) & (df['RSI'] > 65), 'Signal'] = 'SELL'
-        
-        return df
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+            
+        if not df.empty and len(df) > 21:
+            # حساب المؤشرات
+            df['EMA9'] = df['Close'].ewm(span=9, adjust=False).mean()
+            df['EMA21'] = df['Close'].ewm(span=21, adjust=False).mean()
+            
+            # عرض النتيجة
+            st.write(f"السعر الحالي: {float(df['Close'].iloc[-1]):.5f}")
+            
+            if df['EMA9'].iloc[-1] > df['EMA21'].iloc[-1]:
+                st.success("اتجاه صاعد (BUY)")
+            else:
+                st.error("اتجاه هابط (SELL)")
+        else:
+            st.warning("جاري تحميل البيانات..")
+    except Exception as e:
+        st.error(f"خطأ: {e}")
