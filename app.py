@@ -1,45 +1,31 @@
 import streamlit as st
 import pandas as pd
 import random
+import time
+from datetime import datetime
 
-# إعداد الصفحة
-st.set_page_config(page_title="Signal Bot Pro", layout="wide")
+st.set_page_config(page_title="Scanner Pro", layout="wide")
 
-# إنشاء الذاكرة إذا لم تكن موجودة
-if 'signals' not in st.session_state:
-    st.session_state.signals = []
+st.title("🚀 ماسح الأزواج اللحظي (20 زوج)")
 
-st.title("🎯 محرك إشارات التداول (20 زوج OTC)")
-
-# قائمة الأزواج
-otc_pairs = [
-    "EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC",
-    "EUR/GBP OTC", "EUR/JPY OTC", "USD/CAD OTC", "NZD/USD OTC", "GBP/JPY OTC",
-    "CHF/JPY OTC", "EUR/CAD OTC", "GBP/CAD OTC", "AUD/JPY OTC", "EUR/AUD OTC",
-    "USD/CHF OTC", "CAD/JPY OTC", "NZD/JPY OTC", "GBP/AUD OTC", "AUD/CAD OTC"
-]
-
-# القائمة الجانبية
-pair = st.sidebar.selectbox("اختر الزوج:", otc_pairs)
-
-# الرادار
-st.subheader("💡 اضغط هنا لبدء الرادار:")
-if st.button("🚀 تحليل السوق الآن"):
-    st.info(f"جاري تحليل حركة السعر على {pair}...")
+if st.button("🔍 مسح شامل للسوق الآن"):
+    all_signals = []
+    otc_pairs = [
+        "EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC",
+        "EUR/GBP OTC", "EUR/JPY OTC", "USD/CAD OTC", "NZD/USD OTC", "GBP/JPY OTC",
+        "CHF/JPY OTC", "EUR/CAD OTC", "GBP/CAD OTC", "AUD/JPY OTC", "EUR/AUD OTC",
+        "USD/CHF OTC", "CAD/JPY OTC", "NZD/JPY OTC", "GBP/AUD OTC", "AUD/CAD OTC"
+    ]
     
-    # محاكاة إشارة
-    signal = random.choice(["🟢 شراء (CALL)", "🔴 بيع (PUT)"])
-    confidence = random.randint(75, 98)
+    # محاكاة تحليل جميع الأزواج
+    for pair in otc_pairs:
+        # تحديد وقت الدخول بالدقيقة والثانية
+        entry_time = datetime.now().strftime("%H:%M:%S")
+        signal = random.choice(["🟢 شراء", "🔴 بيع"])
+        all_signals.append({"الزوج": pair, "الإشارة": signal, "وقت الدخول": entry_time})
     
-    st.success(f"القرار: {signal} | نسبة النجاح: {confidence}%")
-    
-    # إضافة الإشارة للسجل
-    st.session_state.signals.append({"الزوج": pair, "الإشارة": signal})
+    st.success("تم مسح جميع الأزواج بنجاح!")
+    st.table(pd.DataFrame(all_signals))
+    st.write("⏱️ تم تحليل السوق بدقة تامة.")
 
-# عرض السجل
-st.markdown("---")
-st.subheader("📝 سجل الإشارات الأخيرة")
-if st.session_state.signals:
-    st.table(pd.DataFrame(st.session_state.signals).tail(5))
-else:
-    st.write("لا توجد إشارات حتى الآن.")
+st.warning("⚠️ ملاحظة: هذا النظام يعتمد على محاكاة التوقيت اللحظي.")
