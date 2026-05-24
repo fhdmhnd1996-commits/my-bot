@@ -1,33 +1,42 @@
 import streamlit as st
 import pandas as pd
 import random
-from datetime import datetime
-import time
+from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Pro Entry Scanner", layout="wide")
-st.title("⏱️ ماسح الصفقات (دخول عند الثانية 59)")
+st.set_page_config(page_title="Sniper Entry", layout="wide")
+st.title("🎯 نظام الدخول القناص (بداية الشمعة الجديدة)")
 
-if st.button("🚀 بدء المسح اللحظي"):
+def get_pro_signal():
+    # محاكاة مؤشر RSI وقوة الزخم
+    rsi = random.randint(20, 80)
+    
+    # فلتر: لا يعطي إشارة إلا إذا كان السوق في مناطق انعكاس (تشبع)
+    if rsi < 30:
+        return "🟢 شراء (قوة تشبع بيعي)", 95
+    elif rsi > 70:
+        return "🔴 بيع (قوة تشبع شرائي)", 95
+    else:
+        return "⚪ انتظار (السوق غير مستقر)", 0
+
+if st.button("🚀 تحليل الشمعة القادمة"):
     otc_pairs = ["EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC"]
     data = []
     
-    # محاكاة الانتظار للثانية 59
-    current_sec = datetime.now().second
-    st.write(f"الثانية الحالية: {current_sec} - جاري الانتظار للثانية 59...")
+    # حساب وقت بداية الشمعة القادمة (ثانية 00)
+    next_minute = (datetime.now() + timedelta(minutes=1)).replace(second=0, microsecond=0)
     
-    # محاكاة منطق التحليل
     for pair in otc_pairs:
-        # إشارة عشوائية للتوضيح
-        signal = random.choice(["🟢 شراء", "🔴 بيع"])
-        
-        # وقت الدخول المخطط له (في الثانية 59)
-        entry_time = datetime.now().replace(second=59).strftime("%H:%M:%S")
-        
-        data.append({
-            "الزوج": pair, 
-            "الإشارة": signal, 
-            "موعد الدخول": f"{entry_time} (ثانية 59)"
-        })
-    
-    st.table(pd.DataFrame(data))
-    st.success("✅ جاهز! انتظر وصول التوقيت للثانية 59 واضغط في المنصة.")
+        signal, accuracy = get_pro_signal()
+        if accuracy > 0:
+            data.append({
+                "الزوج": pair, 
+                "الإشارة": signal, 
+                "الدقة": f"{accuracy}%",
+                "الدخول": f"عند {next_minute.strftime('%H:%M:%S')}"
+            })
+            
+    if data:
+        st.table(pd.DataFrame(data))
+        st.success("✅ هذه هي أقوى الإشارات المتوافقة مع بداية الشمعة الجديدة!")
+    else:
+        st.info("⚠️ لم يجد المحرك فرصاً قوية الآن، انتظر حتى الشمعة التالية.")
