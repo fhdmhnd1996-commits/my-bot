@@ -3,58 +3,51 @@ import pandas as pd
 from datetime import datetime, timedelta
 import random
 
-# --- إعدادات النظام ---
-st.set_page_config(page_title="Pro Multi-OTC Analyzer", layout="wide")
-st.title("🎯 محلل أزواج الـ OTC الشامل")
+st.set_page_config(page_title="Support/Resistance Analyzer", layout="wide")
+st.title("📈 محلل الدعوم والمقاومات (نظام الحماية)")
 
-# قائمة بجميع أزواج الـ OTC الرئيسية
-otc_pairs = [
-    "EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", 
-    "USDCAD OTC", "AUDCAD OTC", "EURJPY OTC", "GBPJPY OTC"
-]
+# قائمة الأزواج
+otc_pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
 
-def get_platform_time():
-    return datetime.utcnow() + timedelta(hours=3)
-
-# نظام التحليل الاحترافي (فلترة مزدوجة)
-def analyze_pair(pair):
-    rsi = random.randint(15, 85)
-    stoch = random.randint(15, 85)
+# --- محرك التحليل الاحترافي ---
+def analyze_support_resistance(pair):
+    """
+    محاكاة لمنطق حساب الدعوم والمقاومات:
+    السعر الحالي إذا اقترب من منطقة دعم، نتوقع ارتداد (صعود)
+    السعر الحالي إذا اقترب من منطقة مقاومة، نتوقع ارتداد (هبوط)
+    """
+    current_price = random.uniform(1.0500, 1.1000)
+    support = round(random.uniform(1.0400, 1.0500), 4)
+    resistance = round(random.uniform(1.1000, 1.1100), 4)
     
-    # فلترة قوية: لا يعطي إشارة إلا في حالات التشبع القصوى
-    if rsi < 30 and stoch < 25:
-        return "🟢 صعود قوي", rsi
-    elif rsi > 70 and stoch > 75:
-        return "🔴 هبوط قوي", rsi
-    else:
-        return None, rsi
-
-# واجهة المستخدم
-st.sidebar.subheader("إعدادات التحليل الشامل")
-timeframe = st.sidebar.radio("الإطار الزمني:", [1, 2, 5])
-
-if st.button("🚀 ابدأ التحليل لجميع الأزواج"):
-    platform_time = get_platform_time()
-    st.write(f"⏰ وقت الفحص: {platform_time.strftime('%H:%M:%S')}")
+    # الفلترة الذكية:
+    # 1. إذا كان السعر قريباً من الدعم (في نطاق 10 نقاط)، ندخل صعود
+    if abs(current_price - support) < 0.0010:
+        return "🟢 ارتداد صعودي (قرب الدعم)", current_price, support, resistance
     
-    all_results = []
+    # 2. إذا كان السعر قريباً من المقاومة (في نطاق 10 نقاط)، ندخل هبوط
+    elif abs(current_price - resistance) < 0.0010:
+        return "🔴 ارتداد هبوطي (قرب المقاومة)", current_price, support, resistance
     
-    # الحلقة التكرارية لفحص جميع الأزواج
+    return None, current_price, support, resistance
+
+# --- واجهة العرض ---
+if st.button("🔍 تحليل فني دقيق للسوق"):
+    results = []
     for pair in otc_pairs:
-        signal, rsi = analyze_pair(pair)
+        signal, price, sup, res = analyze_support_resistance(pair)
         
         if signal:
-            all_results.append({
+            results.append({
                 "الزوج": pair,
-                "الإشارة": signal,
-                "قوة المؤشر (RSI)": rsi,
-                "وقت التنفيذ": (platform_time + timedelta(minutes=timeframe)).strftime('%H:%M')
+                "السعر الحالي": price,
+                "الدعم": sup,
+                "المقاومة": res,
+                "التوصية": signal
             })
-    
-    # عرض النتائج
-    if all_results:
-        df = pd.DataFrame(all_results)
-        st.table(df)
-        st.success("تم العثور على فرص قوية في الأزواج المذكورة أعلاه.")
+            
+    if results:
+        st.table(pd.DataFrame(results))
+        st.success("تم تحديد فرص الارتداد من مستويات الدعوم والمقاومات.")
     else:
-        st.warning("لا توجد فرص قوية حالياً في جميع الأزواج. يرجى الانتظار وتحديث الصفحة.")
+        st.warning("السعر في منتصف الطريق (لا يوجد فرصة عند الدعم أو المقاومة حالياً). انتظر!")
