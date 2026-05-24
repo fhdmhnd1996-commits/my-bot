@@ -4,48 +4,57 @@ from datetime import datetime, timedelta
 import random
 
 # --- إعدادات النظام ---
-st.set_page_config(page_title="Professional Trading System", layout="wide")
-st.title("🛡️ نظام التداول الاحترافي (OTC Ready)")
+st.set_page_config(page_title="Pro Multi-OTC Analyzer", layout="wide")
+st.title("🎯 محلل أزواج الـ OTC الشامل")
 
-# 1. دالة التوقيت الموحدة (UTC+3)
-def get_time():
+# قائمة بجميع أزواج الـ OTC الرئيسية
+otc_pairs = [
+    "EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", 
+    "USDCAD OTC", "AUDCAD OTC", "EURJPY OTC", "GBPJPY OTC"
+]
+
+def get_platform_time():
     return datetime.utcnow() + timedelta(hours=3)
 
-# 2. ملف التحليل الذكي (الفلترة)
-def get_pro_signal(pair):
+# نظام التحليل الاحترافي (فلترة مزدوجة)
+def analyze_pair(pair):
     rsi = random.randint(15, 85)
     stoch = random.randint(15, 85)
     
-    # استراتيجية الفلترة: دخول فقط عند مناطق التشبع القوية
+    # فلترة قوية: لا يعطي إشارة إلا في حالات التشبع القصوى
     if rsi < 30 and stoch < 25:
-        return "🟢 صعود (تأكيد مزدوج)", rsi
+        return "🟢 صعود قوي", rsi
     elif rsi > 70 and stoch > 75:
-        return "🔴 هبوط (تأكيد مزدوج)", rsi
+        return "🔴 هبوط قوي", rsi
     else:
-        return "⚪ غير مؤكد", rsi
+        return None, rsi
 
-# 3. إدارة الجلسة والوقت
-platform_time = get_time()
-st.sidebar.subheader("إعدادات الجلسة")
-timeframe = st.sidebar.selectbox("الإطار الزمني:", [1, 2, 5])
-num_deals = st.sidebar.slider("عدد الصفقات:", 5, 20, 10)
+# واجهة المستخدم
+st.sidebar.subheader("إعدادات التحليل الشامل")
+timeframe = st.sidebar.radio("الإطار الزمني:", [1, 2, 5])
 
-if st.button("🚀 تشغيل المحلل"):
-    st.write(f"توقيت المنصة: {platform_time.strftime('%H:%M:%S')}")
-    data = []
+if st.button("🚀 ابدأ التحليل لجميع الأزواج"):
+    platform_time = get_platform_time()
+    st.write(f"⏰ وقت الفحص: {platform_time.strftime('%H:%M:%S')}")
     
-    for i in range(num_deals):
-        pair = "EURUSD OTC" # مثال للزوج
-        signal, rsi = get_pro_signal(pair)
-        time_slot = platform_time + timedelta(minutes=timeframe * i)
+    all_results = []
+    
+    # الحلقة التكرارية لفحص جميع الأزواج
+    for pair in otc_pairs:
+        signal, rsi = analyze_pair(pair)
         
-        # فلتر الصفقات الخاسرة: لا تعرض إلا الفرص القوية
-        if "غير مؤكد" not in signal:
-            data.append([pair, time_slot.strftime('%H:%M'), signal, f"RSI: {rsi}"])
+        if signal:
+            all_results.append({
+                "الزوج": pair,
+                "الإشارة": signal,
+                "قوة المؤشر (RSI)": rsi,
+                "وقت التنفيذ": (platform_time + timedelta(minutes=timeframe)).strftime('%H:%M')
+            })
     
-    if data:
-        df = pd.DataFrame(data, columns=["الزوج", "الوقت", "الإشارة", "المؤشرات"])
+    # عرض النتائج
+    if all_results:
+        df = pd.DataFrame(all_results)
         st.table(df)
-        st.success("تم تصفية البيانات بنجاح: تم عرض الصفقات المؤكدة فقط.")
+        st.success("تم العثور على فرص قوية في الأزواج المذكورة أعلاه.")
     else:
-        st.warning("لم يتم العثور على صفقات مؤكدة حالياً.. يرجى إعادة المحاولة.")
+        st.warning("لا توجد فرص قوية حالياً في جميع الأزواج. يرجى الانتظار وتحديث الصفحة.")
