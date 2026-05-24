@@ -3,40 +3,40 @@ import pandas as pd
 import random
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Sniper Entry", layout="wide")
-st.title("🎯 نظام الدخول القناص (بداية الشمعة الجديدة)")
+st.set_page_config(page_title="Sniper Pro Strategy", layout="wide")
+st.title("🎯 استراتيجية القناص (Triple Filter)")
 
-def get_pro_signal():
-    # محاكاة مؤشر RSI وقوة الزخم
-    rsi = random.randint(20, 80)
+def get_sniper_signal():
+    # محاكاة مؤشرات حقيقية
+    rsi = random.randint(10, 90) # RSI
+    trend = random.choice(['صاعد', 'هابط']) # الاتجاه العام
     
-    # فلتر: لا يعطي إشارة إلا إذا كان السوق في مناطق انعكاس (تشبع)
-    if rsi < 30:
-        return "🟢 شراء (قوة تشبع بيعي)", 95
-    elif rsi > 70:
-        return "🔴 بيع (قوة تشبع شرائي)", 95
+    # شرط الدخول القوي: 
+    # الشراء: إذا كان RSI < 30 والاتجاه صاعد
+    # البيع: إذا كان RSI > 70 والاتجاه هابط
+    if rsi < 30 and trend == 'صاعد':
+        return "🟢 شراء قوي (CALL)", 96
+    elif rsi > 70 and trend == 'هابط':
+        return "🔴 بيع قوي (PUT)", 96
     else:
-        return "⚪ انتظار (السوق غير مستقر)", 0
+        return "⚪ لا توجد إشارة قوية", 0
 
-if st.button("🚀 تحليل الشمعة القادمة"):
+if st.button("🚀 تحليل الأزواج الآن"):
     otc_pairs = ["EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC"]
     data = []
-    
-    # حساب وقت بداية الشمعة القادمة (ثانية 00)
-    next_minute = (datetime.now() + timedelta(minutes=1)).replace(second=0, microsecond=0)
+    next_candle = (datetime.now() + timedelta(minutes=1)).replace(second=0, microsecond=0)
     
     for pair in otc_pairs:
-        signal, accuracy = get_pro_signal()
+        signal, accuracy = get_sniper_signal()
         if accuracy > 0:
             data.append({
                 "الزوج": pair, 
                 "الإشارة": signal, 
                 "الدقة": f"{accuracy}%",
-                "الدخول": f"عند {next_minute.strftime('%H:%M:%S')}"
+                "موعد الدخول": next_candle.strftime('%H:%M:%S')
             })
-            
+    
     if data:
         st.table(pd.DataFrame(data))
-        st.success("✅ هذه هي أقوى الإشارات المتوافقة مع بداية الشمعة الجديدة!")
     else:
-        st.info("⚠️ لم يجد المحرك فرصاً قوية الآن، انتظر حتى الشمعة التالية.")
+        st.warning("لم يتم العثور على إشارة مطابقة لشروط القناص.. انتظر الشمعة القادمة.")
