@@ -1,40 +1,37 @@
 import streamlit as st
 import pandas as pd
 
-# إعداد واجهة احترافية
-st.set_page_config(layout="wide", page_title="Pocket Option Auto-Trader")
+# 1. إعداد الصفحة
+st.set_page_config(layout="wide", page_title="Pocket Option Bot")
 
-st.title("🤖 منصة التداول الآلي - Pocket Option")
+# 2. العنوان
+st.title("🤖 منصة التداول الآلي")
 
-# شريط جانبي لإدخال البيانات الحساسة (لا تحفظ البيانات داخل الكود)
+# 3. القائمة الجانبية (للبيانات الحساسة)
 with st.sidebar:
-    st.header("👤 إعدادات الحساب")
-    pocket_id = st.text_input("أدخل رقم حسابك (Pocket Option ID):", type="password")
-    st.warning("تأكد من رقم الحساب قبل التشغيل.")
+    st.header("🔑 إعدادات الحساب")
+    pocket_id = st.text_input("أدخل رقم حسابك (ID):", type="password")
 
-# قسم إعدادات التداول
+# 4. إعدادات الصفقات
 col1, col2 = st.columns([1, 2])
 
 with col1:
     st.subheader("⚙️ إعدادات الصفقات")
-    pair = st.selectbox("اختر الزوج:", [
-        "EUR/USD", "GBP/USD", "EUR/USD OTC", "GBP/USD OTC"
-    ])
+    pair = st.selectbox("اختر الزوج:", ["EUR/USD", "GBP/USD", "EUR/USD OTC"])
     amount = st.number_input("قيمة الصفقة ($):", min_value=1.0, value=10.0)
     
     # زر التشغيل
-    if st.button("🚀 بدء التداول على الحساب"):
+    if st.button("🚀 بدء التداول"):
         if pocket_id:
-            st.success(f"تم ربط الحساب: {pocket_id[:4]}****")
-            st.info(f"جاري مراقبة {pair}...")
+            st.success(f"تم ربط الحساب بنجاح!")
         else:
-            st.error("يرجى إدخال رقم الـ ID الخاص بحسابك أولاً.")
+            st.error("يرجى إدخال رقم الـ ID أولاً")
 
 with col2:
     st.subheader("📊 لوحة المراقبة")
-    st.info("النظام جاهز للربط عبر الـ API.")
+    st.info("النظام في وضع الانتظار...")
 
-# سجل الصفقات
+# 5. سجل الصفقات
 st.markdown("---")
 st.subheader("📝 سجل الصفقات")
-st.table(pd.DataFrame(columns=['رقم الحساب', 'الزوج', 'الحالة']))
+st.table(pd.DataFrame(columns=['الزوج', 'الحالة']))
