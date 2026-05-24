@@ -1,40 +1,26 @@
-import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+import numpy as np
 
-st.set_page_config(page_title="Pro Sniper Bot", layout="wide")
+class StrategyEngine:
+    @staticmethod
+    def calculate_indicators(df):
+        # EMA 9 و 21 للاتجاه
+        df['EMA9'] = df['Close'].ewm(span=9, adjust=False).mean()
+        df['EMA21'] = df['Close'].ewm(span=21, adjust=False).mean()
+        
+        # RSI للتأكيد
+        delta = df['Close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        df['RSI'] = 100 - (100 / (1 + rs))
+        return df
 
-# 1. المزامنة الدقيقة
-if 'offset' not in st.session_state: st.session_state.offset = 0
-st.session_state.offset = st.sidebar.slider("فرق التوقيت (بالثواني):", -10, 10, 0)
-
-def get_time():
-    return datetime.now() + timedelta(seconds=st.session_state.offset)
-
-st.title("🛡️ محرك التداول (خوارزمية الاختراق)")
-
-# 2. الاستراتيجية الحقيقية (لا تعتمد على الحظ)
-def check_market():
-    # محاكاة تحليل 5 أزواج بناءً على تقاطع EMA 9 و EMA 21
-    # صفقة الشراء: EMA 9 يقطع EMA 21 للأعلى
-    # صفقة البيع: EMA 9 يقطع EMA 21 للأسفل
-    signals = [
-        {"الزوج": "EUR/USD OTC", "قرار": "🟢 شراء", "قوة": 98},
-        {"الزوج": "GBP/USD OTC", "قرار": "🔴 بيع", "قوة": 95},
-        {"الزوج": "USD/JPY OTC", "قرار": "🟢 شراء", "قوة": 92},
-        {"الزوج": "BTC/USD OTC", "قرار": "🔴 بيع", "قوة": 96},
-        {"الزوج": "AUD/USD OTC", "قرار": "🟢 شراء", "قوة": 94}
-    ]
-    return signals
-
-if st.button("🚀 تنفيذ خوارزمية التحليل"):
-    data = check_market()
-    next_candle = (get_time() + timedelta(minutes=1)).replace(second=0, microsecond=0)
-    
-    df = pd.DataFrame(data)
-    df["موعد الدخول"] = next_candle.strftime('%H:%M:%S')
-    st.table(df)
-    st.success("✅ تم تحليل السوق بناءً على تقاطع المتوسطات المتحركة.")
-
-st.markdown("---")
-st.write(f"⏱️ توقيتك الحالي: **{get_time().strftime('%H:%M:%S')}**")
+    @staticmethod
+    def generate_signal(df):
+        last = df.iloc[-1]
+        if last['EMA9'] > last['EMA21'] and last['RSI'] < 30:
+            return "🟢 BUY"
+        elif last['EMA9'] < last['EMA21'] and last['RSI'] > 70:
+            return "🔴 SELL"
+        return None
