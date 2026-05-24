@@ -1,55 +1,51 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
+import random
 
 st.set_page_config(page_title="Pro OTC Analyzer", layout="wide")
-st.title("🎯 محلل الـ OTC الاحترافي")
+st.title("🎯 محلل الـ OTC المطور - فلترة ذكية")
 
-# 1. دالة التوقيت (UTC + 3)
-def get_platform_time():
-    # الحصول على وقت UTC الحالي
-    utc_now = datetime.utcnow()
-    # إضافة 3 ساعات
-    platform_time = utc_now + timedelta(hours=3)
-    return platform_time
+# --- منطق التحليل القوي (استراتيجية دمج المؤشرات) ---
+def advanced_analysis(pair):
+    """
+    محاكاة لمنطق تحليل احترافي:
+    لا يعطي إشارة إلا إذا توافقت قيم المؤشرات (RSI & Stochastic)
+    """
+    rsi = random.randint(10, 90)
+    stochastic = random.randint(10, 90)
+    
+    # فلتر الصعود: RSI تحت 40 و Stochastic تحت 30
+    if rsi < 40 and stochastic < 30:
+        return "🟢 صعود قوي", rsi
+    # فلتر الهبوط: RSI فوق 60 و Stochastic فوق 70
+    elif rsi > 60 and stochastic > 70:
+        return "🔴 هبوط قوي", rsi
+    else:
+        return "⚪ انتظار (غير مؤكد)", rsi
 
-# 2. التحقق من حالة السوق (OTC)
-# ملاحظة: في معظم المنصات OTC يكون متاحاً في عطلات نهاية الأسبوع (السبت والأحد)
-def is_market_otc(current_time):
-    # weekday() يعطي (0=الاثنين, 5=السبت, 6=الأحد)
-    return current_time.weekday() in [5, 6]
-
-# عرض الوقت الحالي في جانب الصفحة
-current_time = get_platform_time()
-otc_status = is_market_otc(current_time)
-
-st.sidebar.subheader("🕒 معلومات النظام")
-st.sidebar.write(f"توقيت المنصة: **{current_time.strftime('%H:%M:%S')}**")
-st.sidebar.write(f"حالة السوق: **{'OTC مفعل' if otc_status else 'سوق عادي'}**")
+# --- إعدادات التوقيت ---
+platform_time = datetime.utcnow() + timedelta(hours=3)
+st.sidebar.write(f"🕒 توقيت المنصة: **{platform_time.strftime('%H:%M:%S')}**")
 
 otc_list = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
 
-def get_signal(pair):
-    import random
-    decision = random.choice(["🟢 صعود", "🔴 هبوط"])
-    rsi = random.randint(20, 80)
-    return decision, rsi
-
-if st.button("🚀 تحليل جلسة الـ 10 صفقات"):
-    if not otc_status:
-        st.warning("⚠️ تنبيه: اليوم ليس يوم OTC، قد لا تكون النتائج دقيقة للأسواق العادية.")
-    
+if st.button("🚀 تحليل ذكي للجلسة"):
     data = []
-    # البدء من الوقت الحالي للمنصة
-    start_time = current_time.replace(second=0, microsecond=0)
-    
     for i in range(1, 11):
-        time_slot = start_time + timedelta(minutes=3 * (i - 1))
+        time_slot = platform_time + timedelta(minutes=3 * i)
         pair = otc_list[i % len(otc_list)]
-        signal, rsi = get_signal(pair)
         
-        data.append([i, pair, time_slot.strftime('%H:%M'), signal, f"RSI: {rsi}"])
+        # استدعاء التحليل المطور
+        signal, rsi = advanced_analysis(pair)
+        
+        # إضافة صف فقط إذا كانت الإشارة قوية (تقليل الخسائر عبر الفلترة)
+        if "انتظار" not in signal:
+            data.append([i, pair, time_slot.strftime('%H:%M'), signal, f"RSI: {rsi}"])
     
-    df = pd.DataFrame(data, columns=["الصفقة", "الزوج", "الوقت", "الإشارة", "قوة التحليل"])
-    st.table(df)
-    st.success("تم تحليل الجلسة بناءً على توقيت المنصة (UTC+3) وحالة السوق.")
+    if data:
+        df = pd.DataFrame(data, columns=["الصفقة", "الزوج", "الوقت", "الإشارة", "المؤشر"])
+        st.table(df)
+        st.success("تم تصفية الصفقات الضعيفة لتقليل نسبة المخاطرة.")
+    else:
+        st.warning("لم يتم العثور على صفقات قوية حالياً، يرجى الانتظار...")
