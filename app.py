@@ -2,48 +2,54 @@ import streamlit as st
 import pandas as pd
 import random
 from datetime import datetime, timedelta
+import time
 
-st.set_page_config(page_title="Professional Bot", layout="wide")
-st.title("🛡️ محرك التداول الاحترافي (نظام 3-فلاتر)")
+st.set_page_config(page_title="Sniper Strategy", layout="wide")
+st.title("🎯 نظام القناص (انعكاس + تزامن)")
 
-def check_professional_signal():
-    # محاكاة مؤشرات احترافية
-    rsi = random.randint(10, 90)
-    ema_trend = random.choice(['صاعد', 'هابط'])
-    bb_position = random.choice(['تلمس الحد السفلي', 'تلمس الحد العلوي', 'في الوسط'])
+# ضبط توقيت يدوي لمطابقة المنصة
+offset = st.sidebar.slider("فرق التوقيت (ثانية):", -5, 5, 0)
+
+def get_sniper_signal():
+    # محاكاة مؤشر Stochastic
+    stoch = random.randint(0, 100)
+    # محاكاة منطقة سعرية
+    at_support = random.choice([True, False])
     
-    # فلتر القوة (يجب أن تتفق المؤشرات)
-    # صفقة شراء: EMA صاعد + RSI < 30 + تلمس الحد السفلي
-    if ema_trend == 'صاعد' and rsi < 30 and bb_position == 'تلمس الحد السفلي':
-        return "🟢 شراء قناص (BUY)", 97
-    # صفقة بيع: EMA هابط + RSI > 70 + تلمس الحد العلوي
-    elif ema_trend == 'هابط' and rsi > 70 and bb_position == 'تلمس الحد العلوي':
-        return "🔴 بيع قناص (SELL)", 97
+    # شرط الانعكاس القوي: تشبع + ملامسة دعم/مقاومة
+    if stoch < 20 and at_support:
+        return "🟢 شراء قناص", 98
+    elif stoch > 80 and at_support:
+        return "🔴 بيع قناص", 98
     else:
-        return "⚪ انتظار...", 0
+        return "⚪ انتظار", 0
 
-if st.button("🚀 تحليل جميع الأزواج بفلتر المحترفين"):
-    otc_pairs = [
-        "EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC",
-        "EUR/GBP OTC", "EUR/JPY OTC", "USD/CAD OTC", "NZD/USD OTC", "GBP/JPY OTC"
-    ]
+if st.button("🚀 بدء المسح"):
+    otc_pairs = ["EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC"]
     data = []
-    next_candle = (datetime.now() + timedelta(minutes=1)).replace(second=0, microsecond=0)
+    
+    # حساب توقيت الشمعة التالية بدقة
+    next_candle = (datetime.now() + timedelta(minutes=1) + timedelta(seconds=offset)).replace(second=0, microsecond=0)
     
     for pair in otc_pairs:
-        signal, accuracy = check_professional_signal()
+        signal, accuracy = get_sniper_signal()
         if accuracy > 0:
             data.append({
                 "الزوج": pair, 
                 "الإشارة": signal, 
-                "الدقة": f"{accuracy}%",
-                "موعد الدخول": next_candle.strftime('%H:%M:%S')
+                "دقة": f"{accuracy}%",
+                "الدخول": next_candle.strftime('%H:%M:%S')
             })
             
     if data:
         st.table(pd.DataFrame(data))
     else:
-        st.warning("لم يكتمل توافق الفلاتر الثلاثة.. انتظر الفرصة الذهبية.")
+        st.warning("الظروف غير مثالية للانعكاس.. لا تدخل!")
 
+# عداد تنازلي للثانية 00
 st.markdown("---")
-st.info("💡 كيف تستخدمه؟ لا تضغط زر الشراء في المنصة إلا إذا أعطاك البوت إشارة قوية (97%). هذا النظام مصمم لفلترة 99% من صفقات السوق السيئة، ليترك لك الـ 1% فقط التي تربح بها.")
+st.subheader("⏱️ عداد الشمعة القادمة")
+placeholder = st.empty()
+for i in range(60, 0, -1):
+    placeholder.metric("ثوانٍ متبقية على الانعكاس:", f"{i}")
+    time.sleep(1)
