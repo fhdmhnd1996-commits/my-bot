@@ -5,11 +5,11 @@ from datetime import datetime, timedelta
 
 # --- إعدادات النظام ---
 st.set_page_config(page_title="Pro Full-OTC Analyzer", layout="wide")
-st.title("🎯 نظام الدمج الذكي (20 زوج OTC)")
+st.title("🎯 نظام الدمج الذكي (20 زوج OTC - دقيقة واحدة)")
 
 # إعداد الوقت (UTC+3)
-platform_time = datetime.utcnow() + timedelta(hours=3)
-st.sidebar.write(f"🕒 توقيت المنصة الحالي: **{platform_time.strftime('%H:%M:%S')}**")
+current_time = datetime.utcnow() + timedelta(hours=3)
+st.sidebar.write(f"🕒 توقيت المنصة الحالي: **{current_time.strftime('%H:%M')}**")
 
 # --- محاكاة المؤشرات ---
 def get_market_data():
@@ -35,11 +35,12 @@ def get_market_data():
         })
     return pd.DataFrame(data)
 
-# --- منطق الدمج (نظام النقاط + وقت الدخول) ---
+# --- منطق الدمج (دقيقة واحدة) ---
 def analyze_combined_system(df):
     results = []
-    # التقاط وقت الدخول الفعلي الآن
+    # التقاط وقت الدخول بالدقائق
     entry_time = datetime.utcnow() + timedelta(hours=3)
+    expiry_time = entry_time + timedelta(minutes=1)
     
     for _, row in df.iterrows():
         score = 0
@@ -55,14 +56,17 @@ def analyze_combined_system(df):
         if row['System Ster'] == "Sell": sell_score += 1
         
         if score >= 3:
-            row['القرار'] = "🟢 شراء قوي"
-            row['وقت الدخول'] = entry_time.strftime('%H:%M:%S')
+            row['القرار'] = "🟢 شراء (1M)"
+            row['وقت الدخول'] = entry_time.strftime('%H:%M')
+            row['وقت الانتهاء'] = expiry_time.strftime('%H:%M')
         elif sell_score >= 3:
-            row['القرار'] = "🔴 بيع قوي"
-            row['وقت الدخول'] = entry_time.strftime('%H:%M:%S')
+            row['القرار'] = "🔴 بيع (1M)"
+            row['وقت الدخول'] = entry_time.strftime('%H:%M')
+            row['وقت الانتهاء'] = expiry_time.strftime('%H:%M')
         else:
             row['القرار'] = "⚪ انتظار"
             row['وقت الدخول'] = "-"
+            row['وقت الانتهاء'] = "-"
         
         row['قوة الإشارة'] = f"{max(score, sell_score)}/4"
         results.append(row)
@@ -75,13 +79,13 @@ if st.button("🚀 ابدأ تحليل الدمج الذكي"):
     display_df = final_df[final_df['القرار'] != "⚪ انتظار"]
     
     if not display_df.empty:
-        # عرض الجدول مع وقت الدخول
-        st.table(display_df[['الزوج', 'قوة الإشارة', 'القرار', 'وقت الدخول']])
+        # عرض الجدول مع وقت الدخول والانتهاء
+        st.table(display_df[['الزوج', 'قوة الإشارة', 'القرار', 'وقت الدخول', 'وقت الانتهاء']])
     else:
-        st.warning("لا توجد فرص دمج قوية حالياً.. حاول مجدداً بعد ثوانٍ.")
+        st.warning("لا توجد فرص دمج قوية حالياً.. السوق هادئ.")
 
 st.markdown("""
 ### ملاحظة للمتداول:
-* **وقت الدخول:** هو اللحظة الدقيقة التي ضغطت فيها على زر المسح.
-* إذا ظهرت إشارة، يُفضل دخول الصفقة خلال أول 15-30 ثانية من وقت الدخول الموضح.
+* **وقت الدخول:** هو وقت ظهور الإشارة في النظام.
+* **وقت الانتهاء:** هو الوقت المقترح لإغلاق صفقة الـ 1M.
 """)
