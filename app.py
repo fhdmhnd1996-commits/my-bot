@@ -1,58 +1,45 @@
 import streamlit as st
 import pandas as pd
+import random
 
-# إعداد الصفحة
-st.set_page_config(layout="wide", page_title="Pocket Option Auto-Bot")
+st.set_page_config(page_title="Signal Bot Pro", layout="wide")
 
-st.title("🤖 نظام التداول الآلي الاحترافي")
+st.title("🎯 محرك إشارات التداول (20 زوج OTC)")
 
-# 1. إعدادات الحساب (ID)
-with st.sidebar:
-    st.header("👤 إعدادات الحساب")
-    pocket_id = st.text_input("رقم حسابك في Pocket Option:", type="password")
-    st.info("سيتم استخدام هذا الـ ID للربط الآمن.")
+# قائمة بـ 20 زوج OTC
+otc_pairs = [
+    "EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", "BTC/USD OTC", "AUD/USD OTC",
+    "EUR/GBP OTC", "EUR/JPY OTC", "USD/CAD OTC", "NZD/USD OTC", "GBP/JPY OTC",
+    "CHF/JPY OTC", "EUR/CAD OTC", "GBP/CAD OTC", "AUD/JPY OTC", "EUR/AUD OTC",
+    "USD/CHF OTC", "CAD/JPY OTC", "NZD/JPY OTC", "GBP/AUD OTC", "AUD/CAD OTC"
+]
 
-# 2. تقسيم الواجهة
-col1, col2 = st.columns([1, 2])
+# إعدادات التنبيهات
+st.sidebar.header("🛠 إعدادات الإشارة")
+pair = st.sidebar.selectbox("اختر الزوج:", otc_pairs)
+timeframe = st.sidebar.selectbox("الإطار الزمني:", ["1m", "5m", "15m"])
 
-with col1:
-    st.subheader("⚙️ إعدادات الصفقات")
+# تشغيل المحرك
+if st.sidebar.button("ابدأ تحليل السوق"):
+    st.info(f"جاري تحليل حركة السعر على {pair}...")
     
-    # 2. أزواج OTC
-    pair = st.selectbox("اختر الزوج:", [
-        "EUR/USD OTC", "GBP/USD OTC", "USD/JPY OTC", 
-        "BTC/USD OTC", "AUD/USD OTC"
-    ])
+    # محاكاة إشارة
+    signal = random.choice(["🟢 شراء (CALL)", "🔴 بيع (PUT)"])
+    confidence = random.randint(75, 98)
     
-    # 3. قيمة الصفقة
-    amount = st.number_input("قيمة الصفقة ($):", min_value=1.0, value=10.0)
-    
-    # 4 & 5. إدارة المخاطر
-    stop_loss = st.number_input("إيقاف الخسارة عند ($):", value=50.0)
-    take_profit = st.number_input("إيقاف الربح عند ($):", value=100.0)
-    
-    st.markdown("---")
-    
-    # 7. تشغيل وإيقاف البوت
-    start_bot = st.button("✅ تشغيل البوت الآلي")
-    stop_bot = st.button("🛑 إيقاف البوت الآلي")
-
-with col2:
-    # 6. الرادار (Live Radar)
-    st.subheader("📊 رادار السوق (Live Radar)")
-    if start_bot:
-        if pocket_id:
-            st.success(f"🚀 البوت يعمل الآن على حساب: {pocket_id[:3]}***")
-            st.write(f"المراقبة جارية على: **{pair}**")
-            st.warning("جاري تحليل الشموع وتوقع الصفقات...")
-        else:
-            st.error("⚠️ يرجى إدخال رقم الـ ID أولاً!")
-    elif stop_bot:
-        st.error("🛑 تم إيقاف البوت الآلي بنجاح.")
+    st.subheader(f"💡 الإشارة لزوج {pair}:")
+    if "شراء" in signal:
+        st.success(f"القرار: {signal} | نسبة النجاح المتوقعة: {confidence}%")
     else:
-        st.info("نظام الرادار في وضع الاستعداد. اضغط تشغيل للبدء.")
+        st.error(f"القرار: {signal} | نسبة النجاح المتوقعة: {confidence}%")
+        
+    st.write("---")
+    st.write("👉 افتح منصة Pocket Option الآن ونفذ الصفقة يدوياً!")
 
-# سجل الصفقات
-st.markdown("---")
-st.subheader("📝 سجل الصفقات")
-st.table(pd.DataFrame(columns=['الوقت', 'الزوج', 'الصفقة', 'النتيجة']))
+# سجل الإشارات
+if 'signals' not in st.session_state:
+    st.session_state.signals = []
+
+# إضافة الإشارة للسجل
+st.session_state.signals.append({"الزوج": pair, "الإشارة": signal})
+st.table(pd.DataFrame(st.session_state.signals).tail(5))
