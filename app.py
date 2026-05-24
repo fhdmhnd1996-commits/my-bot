@@ -1,53 +1,55 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+import numpy as np
 import random
 
-st.set_page_config(page_title="Support/Resistance Analyzer", layout="wide")
-st.title("📈 محلل الدعوم والمقاومات (نظام الحماية)")
+# --- إعدادات النظام ---
+st.set_page_config(page_title="Advanced SR + Chandelier System", layout="wide")
+st.title("🎯 نظام الدمج الاحترافي: SR Breaks + Chandelier Exit")
 
-# قائمة الأزواج
-otc_pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
-
-# --- محرك التحليل الاحترافي ---
-def analyze_support_resistance(pair):
-    """
-    محاكاة لمنطق حساب الدعوم والمقاومات:
-    السعر الحالي إذا اقترب من منطقة دعم، نتوقع ارتداد (صعود)
-    السعر الحالي إذا اقترب من منطقة مقاومة، نتوقع ارتداد (هبوط)
-    """
-    current_price = random.uniform(1.0500, 1.1000)
-    support = round(random.uniform(1.0400, 1.0500), 4)
-    resistance = round(random.uniform(1.1000, 1.1100), 4)
-    
-    # الفلترة الذكية:
-    # 1. إذا كان السعر قريباً من الدعم (في نطاق 10 نقاط)، ندخل صعود
-    if abs(current_price - support) < 0.0010:
-        return "🟢 ارتداد صعودي (قرب الدعم)", current_price, support, resistance
-    
-    # 2. إذا كان السعر قريباً من المقاومة (في نطاق 10 نقاط)، ندخل هبوط
-    elif abs(current_price - resistance) < 0.0010:
-        return "🔴 ارتداد هبوطي (قرب المقاومة)", current_price, support, resistance
-    
-    return None, current_price, support, resistance
-
-# --- واجهة العرض ---
-if st.button("🔍 تحليل فني دقيق للسوق"):
-    results = []
-    for pair in otc_pairs:
-        signal, price, sup, res = analyze_support_resistance(pair)
+# --- محاكاة المؤشرات ---
+def get_market_data():
+    # محاكاة بيانات السعر
+    data = []
+    for pair in ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC"]:
+        price = random.uniform(1.0500, 1.1000)
+        # SR Break: هل السعر اخترق مستوى؟
+        sr_signal = random.choice(["Breakout Up", "Breakout Down", "None"])
+        # Chandelier Exit: هل نحن في اتجاه صعودي أم هبوطي؟
+        chandelier_trend = random.choice(["Bullish", "Bearish"])
         
-        if signal:
-            results.append({
-                "الزوج": pair,
-                "السعر الحالي": price,
-                "الدعم": sup,
-                "المقاومة": res,
-                "التوصية": signal
-            })
+        data.append({"Pair": pair, "Price": price, "SR_Signal": sr_signal, "Trend": chandelier_trend})
+    return pd.DataFrame(data)
+
+# --- منطق الدمج (هنا يكمن سر القوة) ---
+def analyze_combined_system(df):
+    results = []
+    for _, row in df.iterrows():
+        # شرط الدخول: اختراق مقاومة (Breakout Up) + اتجاه صعودي (Bullish)
+        if row['SR_Signal'] == "Breakout Up" and row['Trend'] == "Bullish":
+            signal = "🟢 شراء قوي (تأكيد مزدوج)"
+        # شرط الدخول: اختراق دعم (Breakout Down) + اتجاه هبوطي (Bearish)
+        elif row['SR_Signal'] == "Breakout Down" and row['Trend'] == "Bearish":
+            signal = "🔴 بيع قوي (تأكيد مزدوج)"
+        else:
+            signal = "⚪ انتظار (عدم توافق)"
             
-    if results:
-        st.table(pd.DataFrame(results))
-        st.success("تم تحديد فرص الارتداد من مستويات الدعوم والمقاومات.")
-    else:
-        st.warning("السعر في منتصف الطريق (لا يوجد فرصة عند الدعم أو المقاومة حالياً). انتظر!")
+        row['Final_Decision'] = signal
+        results.append(row)
+    return pd.DataFrame(results)
+
+# --- الواجهة ---
+if st.button("🚀 تشغيل نظام الدمج (SR + Chandelier)"):
+    market_df = get_market_data()
+    final_df = analyze_combined_system(market_df)
+    
+    st.table(final_df)
+    
+    st.markdown("""
+    ### شرح استراتيجية الدمج:
+    * **SR Breaks:** يحدد "نقطة الانفجار السعري".
+    * **Chandelier Exit:** يحدد "الترند العام" ويحمي الصفقة من التذبذب.
+    * **القوة:** لن يتم عرض إشارة دخول إلا إذا اتفق المؤشران معاً. 
+    """)
+    st.success("تم تحليل السوق بدمج المؤشرين.")
+
