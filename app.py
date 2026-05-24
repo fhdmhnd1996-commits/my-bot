@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 # --- إعدادات النظام ---
 st.set_page_config(page_title="Pro Full-OTC Analyzer", layout="wide")
-st.title("🎯 نظام الدمج الخماسي (20 زوج OTC)")
+st.title("🎯 نظام الدمج السداسي الاحترافي (20 زوج OTC)")
 
 # التوقيت
 now = datetime.utcnow() + timedelta(hours=3)
@@ -29,11 +29,12 @@ def get_market_data():
             "Chandelier": random.choice(["Bullish", "Bearish"]),
             "Chello Pro": random.choice(["Strong Buy", "Strong Sell", "Neutral"]),
             "System Ster": random.choice(["Buy", "Sell", "Neutral"]),
-            "TPFX": random.choice(["Buy", "Sell", "Neutral"]) # إضافة مؤشر TPFX
+            "TPFX": random.choice(["Buy", "Sell", "Neutral"]),
+            "FBSSPro": random.choice(["Buy", "Sell", "Neutral"]) # إضافة المؤشر السادس
         })
     return pd.DataFrame(data)
 
-# --- منطق الدمج (نظام النقاط الخماسي) ---
+# --- منطق الدمج (نظام النقاط السداسي) ---
 def analyze_combined_system(df):
     results = []
     entry_time = next_minute.strftime('%H:%M')
@@ -47,6 +48,7 @@ def analyze_combined_system(df):
         if row['Chello Pro'] == "Strong Buy": buy_score += 1
         if row['System Ster'] == "Buy": buy_score += 1
         if row['TPFX'] == "Buy": buy_score += 1
+        if row['FBSSPro'] == "Buy": buy_score += 1
         
         # حساب نقاط البيع
         sell_score = 0
@@ -55,18 +57,19 @@ def analyze_combined_system(df):
         if row['Chello Pro'] == "Strong Sell": sell_score += 1
         if row['System Ster'] == "Sell": sell_score += 1
         if row['TPFX'] == "Sell": sell_score += 1
+        if row['FBSSPro'] == "Sell": sell_score += 1
         
-        # اتخاذ القرار (يتطلب 4/5 على الأقل)
-        if buy_score >= 4:
+        # اتخاذ القرار (يتطلب 5/6 على الأقل)
+        if buy_score >= 5:
             row['القرار'] = "🟢 شراء (1M)"
             row['وقت الدخول'] = entry_time
             row['وقت الانتهاء'] = expiry_time
-            row['قوة الإشارة'] = f"{buy_score}/5"
-        elif sell_score >= 4:
+            row['قوة الإشارة'] = f"{buy_score}/6"
+        elif sell_score >= 5:
             row['القرار'] = "🔴 بيع (1M)"
             row['وقت الدخول'] = entry_time
             row['وقت الانتهاء'] = expiry_time
-            row['قوة الإشارة'] = f"{sell_score}/5"
+            row['قوة الإشارة'] = f"{sell_score}/6"
         else:
             row['القرار'] = "⚪ انتظار"
             row['وقت الدخول'] = "-"
@@ -77,13 +80,13 @@ def analyze_combined_system(df):
     return pd.DataFrame(results)
 
 # --- الواجهة ---
-if st.button("🚀 ابدأ تحليل الدمج الخماسي"):
+if st.button("🚀 ابدأ تحليل الدمج السداسي"):
     final_df = analyze_combined_system(get_market_data())
     display_df = final_df[final_df['القرار'] != "⚪ انتظار"]
     
     if not display_df.empty:
         st.table(display_df[['الزوج', 'قوة الإشارة', 'القرار', 'وقت الدخول', 'وقت الانتهاء']])
     else:
-        st.warning("لا توجد فرص قوية (4/5) حالياً.. انتظر تحديثاً جديداً.")
+        st.warning("لا توجد فرص قوية (5/6) حالياً.. النظام يفلتر السوق بصرامة.")
 
-st.markdown("### نظام الدمج الخماسي: يتطلب تطابق 4 مؤشرات على الأقل لضمان أعلى دقة ممكنة.")
+st.markdown("### نظام الدمج السداسي: تم تفعيل FBSSPro ليكون الفلتر الأخير لضمان أعلى دقة للصفقات.")
