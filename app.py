@@ -4,54 +4,61 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # إعداد الصفحة
-st.set_page_config(page_title="Scanner Pro - Entry Timing", layout="wide")
+st.set_page_config(page_title="Scanner OTC Pro", layout="wide")
 
-PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "EURGBP", "EURJPY", 
-         "CHFJPY", "AUDJPY", "NZDUSD", "GBPJPY", "AUDCAD", "EURCAD", "GBPCAD", 
-         "CADJPY", "AUDNZD", "EURAUD", "EURCHF", "GBPCHF", "USDCHF"]
+# قائمة الـ 20 زوج OTC
+PAIRS = [
+    "EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC",
+    "EURGBP OTC", "EURJPY OTC", "CHFJPY OTC", "AUDJPY OTC", "NZDUSD OTC",
+    "GBPJPY OTC", "AUDCAD OTC", "EURCAD OTC", "GBPCAD OTC", "CADJPY OTC",
+    "AUDNZD OTC", "EURAUD OTC", "EURCHF OTC", "GBPCHF OTC", "USDCHF OTC"
+]
 
-def get_trading_times():
+def get_entry_data():
     """حساب وقت الدخول مع بداية الشمعة القادمة (الثانية 00)"""
     now = datetime.now()
-    # نضبط وقت الدخول ليكون بداية الدقيقة التالية
+    # الدخول سيكون دائماً عند بداية الدقيقة القادمة
     entry_time = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
     expiry_time = entry_time + timedelta(minutes=1)
     return entry_time.strftime("%H:%M:%S"), expiry_time.strftime("%H:%M:%S")
 
-def calculate_logic():
-    """منطق فني يعتمد على محاكاة مؤشر RSI"""
-    rsi = np.random.uniform(20, 80) 
-    if rsi < 30:
-        return "🟢 صعود (شراء)", "Strong Buy"
-    elif rsi > 70:
-        return "🔴 هبوط (بيع)", "Strong Sell"
-    return "⚪ انتظار", "Neutral"
+def get_signal():
+    """محاكاة منطق فني (RSI)"""
+    val = np.random.uniform(0, 100)
+    if val < 30:
+        return "🟢 صعود (شراء)"
+    elif val > 70:
+        return "🔴 هبوط (بيع)"
+    return "⚪ انتظار"
 
-st.title("🛡️ ماسح الإشارات الفني (التوقيت الدقيق)")
+st.title("🛡️ ماسح الـ 20 زوج OTC (توقيت الشمعة الثانية)")
 
-if st.button("🚀 فحص الأسواق لافتتاح الشمعة التالية"):
-    entry, expiry = get_trading_times()
-    data = []
+if st.button("🚀 فحص جميع الأزواج الآن"):
+    entry, expiry = get_entry_data()
+    results = []
     
     for pair in PAIRS:
-        trend, signal = calculate_logic()
-        if trend != "⚪ انتظار":
-            data.append({
-                "الزوج": pair,
-                "الإشارة": signal,
-                "القرار": trend,
-                "وقت الدخول": entry,
-                "وقت الانتهاء": expiry
-            })
+        signal = get_signal()
+        results.append({
+            "الزوج": pair,
+            "القرار": signal,
+            "وقت الدخول": entry,
+            "وقت الانتهاء": expiry
+        })
     
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(results)
     
-    if not df.empty:
-        st.subheader(f"📊 فرص الدخول المتاحة عند الساعة {entry}")
-        st.dataframe(df, use_container_width=True)
-        st.success("اضغط على زر الدخول في منصتك تماماً عند وصول الوقت للثانية 00.")
+    # عرض الفرص المتاحة فقط في الأعلى
+    signals = df[df['القرار'] != "⚪ انتظار"]
+    
+    if not signals.empty:
+        st.subheader(f"📊 الفرص المتاحة عند الساعة {entry}")
+        st.dataframe(signals, use_container_width=True)
     else:
-        st.warning("لا توجد فرص فنية حالياً.. انتظر الدقيقة القادمة.")
+        st.warning("لا توجد فرص مطابقة حالياً.. جرب التحديث مرة أخرى.")
 
-st.sidebar.markdown("### 🕒 ساعة النظام")
+    with st.expander("📋 عرض حالة جميع الـ 20 زوج"):
+        st.table(df)
+
+st.sidebar.markdown("### 🕒 توقيت النظام")
 st.sidebar.metric("الوقت الحالي", datetime.now().strftime("%H:%M:%S"))
