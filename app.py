@@ -5,78 +5,78 @@ from datetime import datetime, timedelta
 
 # --- إعدادات النظام ---
 st.set_page_config(page_title="Pro Full-OTC Analyzer", layout="wide")
-st.title("🎯 نظام الدمج الذكي (20 زوج OTC)")
+st.title("🎯 نظام التداول الرباعي الشامل (20 زوج OTC)")
+
+# إعداد الوقت (UTC+3)
+platform_time = datetime.utcnow() + timedelta(hours=3)
+st.sidebar.write(f"🕒 توقيت المنصة: **{platform_time.strftime('%H:%M')}**")
+
+# قائمة بـ 20 زوج OTC
+otc_pairs = [
+    "EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC",
+    "AUDCAD OTC", "EURJPY OTC", "GBPJPY OTC", "NZDUSD OTC", "AUDJPY OTC",
+    "EURGBP OTC", "EURCAD OTC", "CHFJPY OTC", "GBPCAD OTC", "CADJPY OTC",
+    "AUDNZD OTC", "NZDJPY OTC", "EURCHF OTC", "GBPCHF OTC", "AUDCHF OTC"
+]
 
 # --- محاكاة المؤشرات ---
 def get_market_data():
-    otc_pairs = [
-        "EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC",
-        "AUDCAD OTC", "EURJPY OTC", "GBPJPY OTC", "NZDUSD OTC", "AUDJPY OTC",
-        "EURGBP OTC", "EURCAD OTC", "CHFJPY OTC", "GBPCAD OTC", "CADJPY OTC",
-        "AUDNZD OTC", "NZDJPY OTC", "EURCHF OTC", "GBPCHF OTC", "AUDCHF OTC"
-    ]
     data = []
     for pair in otc_pairs:
-        # محاكاة حالة المؤشرات
+        price = random.uniform(1.0500, 1.1000)
         sr_break = random.choice(["Breakout Up", "Breakout Down", "None"])
         chandelier = random.choice(["Bullish", "Bearish"])
         chello = random.choice(["Strong Buy", "Strong Sell", "Neutral"])
         system_ster = random.choice(["Buy", "Sell", "Neutral"])
         
+        expiry_time = (platform_time + timedelta(minutes=1)).strftime('%H:%M')
+        
         data.append({
-            "الزوج": pair,
+            "الزوج": pair, 
+            "السعر": f"{price:.4f}", 
             "SR Breaks": sr_break,
             "Chandelier": chandelier,
             "Chello Pro": chello,
-            "System Ster": system_ster
+            "System Ster": system_ster,
+            "وقت الانتهاء": expiry_time
         })
     return pd.DataFrame(data)
 
-# --- منطق الدمج (نظام النقاط) ---
+# --- منطق الدمج ---
 def analyze_combined_system(df):
     results = []
     for _, row in df.iterrows():
-        score = 0
-        
-        # منح نقاط لاتجاه الشراء
-        if row['SR Breaks'] == "Breakout Up": score += 1
-        if row['Chandelier'] == "Bullish": score += 1
-        if row['Chello Pro'] == "Strong Buy": score += 1
-        if row['System Ster'] == "Buy": score += 1
-        
-        # منح نقاط لاتجاه البيع
-        sell_score = 0
-        if row['SR Breaks'] == "Breakout Down": sell_score += 1
-        if row['Chandelier'] == "Bearish": sell_score += 1
-        if row['Chello Pro'] == "Strong Sell": sell_score += 1
-        if row['System Ster'] == "Sell": sell_score += 1
-        
-        # اتخاذ القرار بناءً على الدمج
-        if score >= 3:
-            row['القرار'] = "🟢 شراء قوي"
-        elif sell_score >= 3:
-            row['القرار'] = "🔴 بيع قوي"
+        if (row['SR Breaks'] == "Breakout Up" and 
+            row['Chandelier'] == "Bullish" and 
+            row['Chello Pro'] == "Strong Buy" and
+            row['System Ster'] == "Buy"):
+            row['القرار'] = "🟢 شراء (1M)"
+            
+        elif (row['SR Breaks'] == "Breakout Down" and 
+              row['Chandelier'] == "Bearish" and 
+              row['Chello Pro'] == "Strong Sell" and
+              row['System Ster'] == "Sell"):
+            row['القرار'] = "🔴 بيع (1M)"
         else:
             row['القرار'] = "⚪ انتظار"
-        
-        row['قوة الإشارة'] = f"{max(score, sell_score)}/4"
         results.append(row)
     return pd.DataFrame(results)
 
 # --- الواجهة ---
-if st.button("🚀 ابدأ تحليل الدمج الذكي"):
-    df = get_market_data()
-    final_df = analyze_combined_system(df)
+if st.button("🚀 ابدأ مسح 20 زوج OTC"):
+    market_df = get_market_data()
+    final_df = analyze_combined_system(market_df)
+    
     display_df = final_df[final_df['القرار'] != "⚪ انتظار"]
     
     if not display_df.empty:
-        st.table(display_df)
+        st.table(display_df[['الزوج', 'السعر', 'SR Breaks', 'Chandelier', 'Chello Pro', 'System Ster', 'القرار', 'وقت الانتهاء']])
+        st.success("تم العثور على فرص قوية في قائمة الـ 20 زوج.")
     else:
-        st.warning("لا توجد فرص دمج قوية حالياً (تحتاج 3/4 مؤشرات على الأقل).")
+        st.warning("لا توجد فرص مطابقة حالياً.. السوق هادئ.")
 
 st.markdown("""
-### كيف يعمل الدمج؟
-* النظام الآن يمنح **نقطة واحدة لكل مؤشر**.
-* لا تظهر الإشارة إلا إذا حصل الزوج على **3 أو 4 نقاط** (مصداقية أعلى).
-* هذا يحميك من الإشارات الكاذبة التي قد تأتي من مؤشر واحد فقط.
+### ملاحظة:
+* النظام الآن يراقب **20 زوجاً** لزيادة فرص الصيد.
+* **تنبيه:** مع زيادة عدد الأزواج، قد تظهر فرص أكثر، التزم بإدارة رأس المال.
 """)
