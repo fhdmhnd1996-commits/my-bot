@@ -4,16 +4,19 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # إعداد الصفحة
-st.set_page_config(page_title="Pro OTC Analyzer", layout="wide")
-st.title("🎯 نظام التداول الرباعي (توقيت الدقيقة)")
+st.set_page_config(page_title="Pro OTC Next-Candle", layout="wide")
+st.title("🎯 نظام التداول (دخول الشمعة التالية)")
 
-# دالة التحليل والبحث عن صفقات
+# دالة التحليل مع حساب وقت الشمعة التالية
 def find_opportunities():
     pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
     data = []
     
-    # التوقيت الحالي بالدقيقة (UTC+3)
-    entry_time = (datetime.utcnow() + timedelta(hours=3)).strftime("%H:%M")
+    # التوقيت الحالي
+    now = datetime.utcnow() + timedelta(hours=3)
+    entry_time = now.strftime("%H:%M")
+    # وقت الشمعة القادمة (إضافة دقيقة واحدة)
+    next_candle = (now + timedelta(minutes=1)).strftime("%H:%M")
     
     for pair in pairs:
         # محاكاة مؤشرات
@@ -22,22 +25,22 @@ def find_opportunities():
         
         # منطق اتخاذ القرار
         if rsi < 35 and volume > 1.5:
-            decision = "🟢 شراء (دخول فوري)"
+            decision = "🟢 شراء (دخول الشمعة التالية)"
         elif rsi > 65 and volume > 1.5:
-            decision = "🔴 بيع (دخول فوري)"
+            decision = "🔴 بيع (دخول الشمعة التالية)"
         else:
             decision = "⚪ انتظار"
             
         data.append({
             "الزوج": pair,
             "وقت الدخول": entry_time,
-            "RSI": rsi,
+            "وقت انتهاء الصفقة": next_candle,
             "القرار": decision
         })
     return pd.DataFrame(data)
 
 # الواجهة
-if st.button("🚀 ابحث عن صفقة (توقيت الدقيقة)"):
+if st.button("🚀 ابحث عن فرص الشمعة القادمة"):
     df = find_opportunities()
     
     # تنسيق الجدول
@@ -53,11 +56,8 @@ if st.button("🚀 ابحث عن صفقة (توقيت الدقيقة)"):
         hide_index=True
     )
     
-    # رسالة ذكية
+    # ملاحظة توجيهية
     if not df[df['القرار'] != "⚪ انتظار"].empty:
-        st.success(f"تم رصد فرص في تمام الساعة {datetime.utcnow().add(hours=3).strftime('%H:%M')} - نفذ الصفقة الآن!")
-    else:
-        st.warning("لا توجد فرص مطابقة للشروط حالياً.")
+        st.success("تنبيه: أدخل الصفقة مع بداية الشمعة التالية (في الوقت الموضح في الجدول).")
 
-st.sidebar.markdown("---")
-st.sidebar.write(f"🕒 توقيت المنصة المعتمد: **{(datetime.utcnow() + timedelta(hours=3)).strftime('%H:%M')}**")
+st.sidebar.write(f"🕒 الوقت الحالي: **{(datetime.utcnow() + timedelta(hours=3)).strftime('%H:%M:%S')}**")
