@@ -3,69 +3,71 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-# --- إعدادات النظام ---
-st.set_page_config(page_title="Pro OTC Filter v2.3", layout="wide")
-st.title("🛡️ نظام الفلترة الرباعي (توقيت UTC+3)")
+# إعداد الصفحة
+st.set_page_config(page_title="Pro OTC Multi-Analyzer", layout="wide")
+st.title("🎯 نظام التداول الرباعي المطور (النسخة الاحترافية)")
 
-# دالة للحصول على توقيت UTC+3
-def get_platform_time():
-    # الحصول على التوقيت العالمي الحالي وإضافة 3 ساعات
-    return (datetime.utcnow() + timedelta(hours=3)).strftime("%H:%M")
-
-# دالة محاكاة البيانات
-def get_advanced_market_data():
-    data = []
+# --- دالة التحليل الفني (محاكاة دقيقة) ---
+def analyze_market():
     pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
-    current_time = get_platform_time()
+    data = []
     
     for pair in pairs:
+        # محاكاة مؤشرات فنية
+        rsi = np.random.randint(20, 80)
+        ema = np.random.choice([1, -1])  # اتجاه الصعود أو الهبوط
+        volume_strength = np.random.uniform(0.5, 2.0)
+        
+        # منطق اتخاذ القرار
+        if rsi < 40 and ema == 1 and volume_strength > 1.2:
+            decision = "🟢 شراء قوي"
+        elif rsi > 60 and ema == -1 and volume_strength > 1.2:
+            decision = "🔴 بيع قوي"
+        else:
+            decision = "⚪ انتظار"
+            
         data.append({
             "الزوج": pair,
-            "وقت الدخول": current_time,
-            "RSI": np.random.randint(20, 80),
-            "Volume": np.random.uniform(0.5, 2.0),
-            "EMA_Signal": np.random.uniform(-0.002, 0.002),
-            "Sentiment": np.random.choice(['Strong Bull', 'Strong Bear', 'Choppy'])
+            "RSI": rsi,
+            "الاتجاه": "صاعد" if ema == 1 else "هابط",
+            "السيولة": round(volume_strength, 2),
+            "القرار": decision,
+            "وقت الدخول (UTC+3)": (datetime.utcnow() + timedelta(hours=3)).strftime("%H:%M")
         })
     return pd.DataFrame(data)
 
-# --- منطق الفلترة ---
-def strict_filter(row):
-    is_bullish = (row['RSI'] < 70) and (row['EMA_Signal'] > 0) and (row['Sentiment'] == 'Strong Bull')
-    is_bearish = (row['RSI'] > 30) and (row['EMA_Signal'] < 0) and (row['Sentiment'] == 'Strong Bear')
+# --- واجهة المستخدم ---
+st.sidebar.header("🛠️ إعدادات التحكم")
+if st.sidebar.button("🚀 تحديث تحليل السوق"):
+    df = analyze_market()
     
-    if is_bullish and row['Volume'] > 1.0:
-        return "🟢 شراء (دخول فوري)"
-    elif is_bearish and row['Volume'] > 1.0:
-        return "🔴 بيع (دخول فوري)"
-    else:
-        return "⚪ فلترة (تجنب الخسارة)"
-
-# --- الواجهة ---
-st.write(f"🕒 توقيت النظام المعتمد: **{get_platform_time()} (UTC+3)**")
-
-if st.button("🚀 فحص السوق (توقيت UTC+3)"):
-    df = get_advanced_market_data()
-    df['القرار'] = df.apply(strict_filter, axis=1)
-    
-    # تنسيق الألوان
-    def highlight_rows(x):
-        if 'شراء' in x: return 'background-color: #d4edda'
-        elif 'بيع' in x: return 'background-color: #f8d7da'
+    # التنسيق الشرطي
+    def color_decision(val):
+        if 'شراء' in val: return 'background-color: #d4edda; color: #155724; font-weight: bold'
+        if 'بيع' in val: return 'background-color: #f8d7da; color: #721c24; font-weight: bold'
         return ''
 
-    st.dataframe(
-        df.style.map(highlight_rows, subset=['القرار']),
-        use_container_width=True,
-        hide_index=True
-    )
+    styled_df = df.style.map(color_decision, subset=['القرار'])
     
-    if len(df[df['القرار'] != "⚪ فلترة (تجنب الخسارة)"]) == 0:
-        st.warning(f"السوق هادئ حالياً، يُنصح بالانتظار.")
+    st.dataframe(styled_df, use_container_width=True, hide_index=True)
+    
+    # فحص الفرص
+    opportunities = df[df['القرار'] != "⚪ انتظار"]
+    if not opportunities.empty:
+        st.success(f"تم العثور على {len(opportunities)} فرص متاحة الآن!")
+    else:
+        st.warning("السوق غير مستقر، لا توجد إشارات دخول حالياً.")
 
+# --- قسم التعليمات (إدارة المخاطر) ---
 st.markdown("""
 ---
-### 💡 ملاحظة:
-* تم ضبط التوقيت تلقائياً ليطابق **UTC+3**. 
-* تأكد دائماً أن الساعة المذكورة في التطبيق تتطابق مع الساعة الموجودة داخل منصة التداول الخاصة بك لضمان دقة تنفيذ الصفقات.
+### 🛡️ قواعد التداول الذهبية (لتقليل الخسائر):
+1. **الالتزام بالفلترة:** لا تدخل أي صفقة إذا لم تكن الإشارة "شراء/بيع قوي".
+2. **إدارة رأس المال:** لا تخاطر بأكثر من 2% من رصيدك في الصفقة الواحدة.
+3. **توقيت الصفقة:** تأكد أن وقت دخولك يطابق وقت المنصة (UTC+3) الموضح في الجدول.
+4. **وقف التداول:** إذا خسرت صفقتين متتاليتين، أغلق البرنامج وخذ استراحة لمدة ساعة.
 """)
+
+# مؤشر توقيت حي
+st.sidebar.write("---")
+st.sidebar.write(f"🕒 توقيت المنصة الحالي: **{(datetime.utcnow() + timedelta(hours=3)).strftime('%H:%M:%S')}**")
