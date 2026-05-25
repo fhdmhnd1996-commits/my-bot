@@ -1,48 +1,65 @@
 import streamlit as st
 import pandas as pd
+import yfinance as yf
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Professional OTC Session", layout="wide")
-st.title("🎯 جدول صفقات الـ OTC الاحترافي")
+# --- المحرك البرمجي المحسن ---
+class TradingEngine:
+    @staticmethod
+    def get_data(ticker):
+        df = yf.download(ticker, period="1d", interval="1m", progress=False)
+        # معالجة MultiIndex إذا وجد في البيانات
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        return df.dropna()
 
-# قائمة الـ 20 زوجاً
-otc_list = [
-    "EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC", 
-    "USDCHF OTC", "EURGBP OTC", "EURJPY OTC", "GBPJPY OTC", "AUDJPY OTC",
-    "NZDUSD OTC", "EURCAD OTC", "EURCHF OTC", "CADJPY OTC", "CHFJPY OTC", 
-    "GBPCAD OTC", "EURAUD OTC", "GBPAUD OTC", "NZDJPY OTC", "AUDCAD OTC"
-]
+    @staticmethod
+    def apply_strategy(df):
+        # حساب المؤشرات بدقة
+        df['EMA9'] = df['Close'].ewm(span=9, adjust=False).mean()
+        df['EMA21'] = df['Close'].ewm(span=21, adjust=False).mean()
+        
+        delta = df['Close'].diff()
+        gain = (delta.clip(lower=0)).rolling(window=14).mean()
+        loss = (-delta.clip(upper=0)).rolling(window=14).mean()
+        df['RSI'] = 100 - (100 / (1 + (gain / loss)))
+        return df
 
-# اختيار وقت البدء
-st.subheader("إعدادات الجلسة")
-col1, col2 = st.columns(2)
-with col1:
-    start_hour = st.number_input("ساعة البدء (24 ساعة)", min_value=0, max_value=23, value=datetime.now().hour)
-with col2:
-    start_minute = st.number_input("دقيقة البدء", min_value=0, max_value=59, value=datetime.now().minute)
+# --- الواجهة (Interface) ---
+st.set_page_config(page_title="Pro Trading Bot", layout="wide")
+st.title("🛡️ نظام التداول الاحترافي (توقيت الدقيقة)")
 
-if st.button("🚀 إنشاء جدول الصفقات بالدقيقة"):
-    # تحديد وقت البدء
-    start_time = datetime.now().replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
-    
-    st.write(f"### وقت بدء الجلسة: {start_time.strftime('%H:%M')}")
-    
-    data = []
-    for i in range(1, 11):
-        # صفقات بفاصل 3 دقائق
-        trade_time = start_time + timedelta(minutes=3 * (i - 1))
-        pair = otc_list[(i-1) % len(otc_list)]
-        data.append([i, pair, trade_time.strftime('%H:%M')]) # التوقيت بالدقيقة فقط
-    
-    # عرض الجدول بدون استخدام style.applymap لتجنب الخطأ
-    df = pd.DataFrame(data, columns=["رقم الصفقة", "الزوج", "وقت الدخول"])
-    st.table(df)
-    
-    st.success("الجدول جاهز! التزم بالدخول في الوقت المحدد.")
+ticker = st.sidebar.selectbox("اختر الزوج:", ["EURUSD=X", "GBPUSD=X", "JPY=X"])
 
-st.markdown("""
-### 🛡️ قواعد الجلسة لتقليل الخسائر:
-* **إدارة المخاطر:** لا تضع أكثر من 2% من رصيدك في الصفقة الواحدة.
-* **الالتزام:** إذا خسرت صفقتين متتاليتين، **توقف فوراً**.
-* **الدقة:** أدخل الصفقة في بداية الدقيقة الموضحة في الجدول.
-""")
+if st.button("🚀 تشغيل المحرك والتحليل"):
+    try:
+        engine = TradingEngine()
+        df = engine.get_data(ticker)
+        
+        if df is not None and not df.empty and len(df) > 21:
+            df = engine.apply_strategy(df)
+            last = df.iloc[-1]
+            
+            # العرض بالدقيقة فقط
+            st.subheader(f"تحليل زوج: {ticker}")
+            st.metric("السعر الحالي", f"{float(last['Close']):.5f}")
+            st.metric("مؤشر RSI", f"{float(last['RSI']):.2f}")
+            
+            # تحديد دقيقة الدخول التالية
+            next_minute = (datetime.now() + timedelta(minutes=1)).strftime("%H:%M")
+            
+            # منطق الدخول الصارم
+            if last['EMA9'] > last['EMA21'] and last['RSI'] < 30:
+                st.success(f"🟢 إشارة شراء قوية (BUY) - تنفيذ في دقيقة: {next_minute}")
+            elif last['EMA9'] < last['EMA21'] and last['RSI'] > 70:
+                st.error(f"🔴 إشارة بيع قوية (SELL) - تنفيذ في دقيقة: {next_minute}")
+            else:
+                st.warning("⚪ لا توجد إشارة مطابقة للمعايير حالياً.")
+        else:
+            st.error("⚠️ بيانات السوق غير كافية أو غير متاحة حالياً.")
+    except Exception as e:
+        st.error(f"خطأ تقني: {e}")
+
+# عرض الوقت بالدقيقة
+st.sidebar.markdown("---")
+st.sidebar.write(f"🕒 توقيت النظام: **{datetime.now().strftime('%H:%M')}**")
