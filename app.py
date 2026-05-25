@@ -1,34 +1,28 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # --- إعدادات النظام ---
-st.set_page_config(page_title="Pro OTC Filter v2.0", layout="wide")
-st.title("🛡️ نظام الفلترة الرباعي (تقليل الخسائر)")
+st.set_page_config(page_title="Pro OTC Filter v2.1", layout="wide")
+st.title("🛡️ نظام الفلترة الرباعي الاحترافي")
 
-# دالة تحاكي مؤشرات فنية حقيقية (بدلاً من Random)
+# دالة تحاكي بيانات السوق
 def get_advanced_market_data():
     data = []
-    # محاكاة حالة السوق (Trend, RSI, Volume, Momentum)
-    for pair in ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]:
-        rsi = np.random.randint(20, 80)      # قوة الاتجاه
-        vol = np.random.uniform(0.5, 2.0)    # حجم السيولة
-        ema_diff = np.random.uniform(-0.002, 0.002) # تقاطع المتوسطات
-        market_sentiment = np.random.choice(['Strong Bull', 'Strong Bear', 'Choppy'])
-        
+    pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
+    for pair in pairs:
         data.append({
             "الزوج": pair,
-            "RSI": rsi,
-            "Volume": vol,
-            "EMA_Signal": ema_diff,
-            "Sentiment": market_sentiment
+            "RSI": np.random.randint(20, 80),
+            "Volume": np.random.uniform(0.5, 2.0),
+            "EMA_Signal": np.random.uniform(-0.002, 0.002),
+            "Sentiment": np.random.choice(['Strong Bull', 'Strong Bear', 'Choppy'])
         })
     return pd.DataFrame(data)
 
-# --- منطق تقليل الخسائر (الفلترة الصارمة) ---
+# --- منطق الفلترة ---
 def strict_filter(row):
-    # الفلترة: لا دخول إذا كان السوق متذبذباً (Choppy) أو الـ RSI في مناطق الانعكاس
     is_bullish = (row['RSI'] < 70) and (row['EMA_Signal'] > 0) and (row['Sentiment'] == 'Strong Bull')
     is_bearish = (row['RSI'] > 30) and (row['EMA_Signal'] < 0) and (row['Sentiment'] == 'Strong Bear')
     
@@ -39,20 +33,34 @@ def strict_filter(row):
     else:
         return "⚪ فلترة (تجنب الخسارة)"
 
-# --- التنفيذ ---
+# --- الواجهة والتنفيذ ---
 if st.button("🚀 مسح السوق بفلترة صارمة"):
     df = get_advanced_market_data()
     df['القرار'] = df.apply(strict_filter, axis=1)
     
-    # عرض النتائج مع تلوين
-    st.dataframe(df.style.applymap(lambda x: 'background-color: #d4edda' if 'شراء' in x else ('background-color: #f8d7da' if 'بيع' in x else ''), subset=['القرار']))
+    # دالة التنسيق الشرطي (متوافقة مع الإصدارات الحديثة)
+    def highlight_rows(x):
+        if 'شراء' in x:
+            return 'background-color: #d4edda'
+        elif 'بيع' in x:
+            return 'background-color: #f8d7da'
+        return ''
+
+    # عرض الجدول
+    st.dataframe(
+        df.style.map(highlight_rows, subset=['القرار']),
+        use_container_width=True
+    )
     
+    # إحصائية سريعة
     if len(df[df['القرار'] != "⚪ فلترة (تجنب الخسارة)"]) == 0:
         st.warning("السوق غير مستقر حالياً، النظام منعك من الدخول لتجنب الخسارة.")
+    else:
+        st.success("تم العثور على فرص مطابقة للمعايير.")
 
 st.markdown("""
-### كيف يقلل هذا الكود الخسائر؟
-1. **تجاهل التذبذب (Choppy Market):** إذا كانت قيمة الـ `Sentiment` غير واضحة، النظام يمنعك من التداول تلقائياً.
-2. **فلترة السيولة (Volume Filter):** لا يدخل النظام إلا إذا كان حجم السيولة (`Volume > 1.0`) كافياً، لأن الصفقات في السيولة الضعيفة غالباً ما تكون خاسرة.
-3. **مؤشر الـ RSI:** يمنع الدخول في صفقات الشراء إذا كان السوق في حالة تشبع شرائي (`RSI > 70`)، وهي أكبر أسباب خسارة صفقات الـ 1 دقيقة.
+### ملاحظات هامة:
+* تم استخدام دالة `map` بدلاً من `applymap` لضمان عمل الكود على أحدث إصدارات مكتبة `pandas`.
+* لا تدخل أي صفقة إذا كان المؤشر يشير إلى **"فلترة"**.
+* الصبر في انتظار الإشارة الصحيحة هو سر تجنب الخسائر في سوق الـ OTC.
 """)
