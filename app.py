@@ -1,76 +1,42 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 
-# --- إعدادات النظام ---
-st.set_page_config(page_title="Pro OTC Analyzer v4.0", layout="wide")
-st.title("🎯 نظام التداول الرباعي (تحليل المؤشرات المتقدم)")
+st.set_page_config(page_title="Professional OTC Trading Plan", layout="wide")
+st.title("🎯 خطة التداول الذكية (10 صفقات متتالية)")
 
-# دالة الحساب الدقيق للتوقيت
-def get_next_candle_time():
-    now = datetime.utcnow() + timedelta(hours=3)
-    # نضبط الوقت لبداية الدقيقة التالية لضمان الدخول مع الشمعة
-    next_minute = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
-    return next_minute.strftime("%H:%M")
+# قائمة الأزواج
+otc_list = [
+    "EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC", 
+    "USDCHF OTC", "EURGBP OTC", "EURJPY OTC", "GBPJPY OTC", "AUDJPY OTC"
+]
 
-# دالة التحليل الفني (محاكاة احترافية)
-def get_market_analysis():
-    pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
+# التحكم في وقت البدء
+start_option = st.radio("متى تريد بدء الجلسة؟", ["الآن", "تحديد وقت يدوي"])
+if start_option == "الآن":
+    base_time = datetime.now()
+else:
+    # يمكنك إضافة إدخال لوقت يدوي هنا
+    base_time = datetime.now()
+
+if st.button("🚀 إنشاء جدول الصفقات"):
     data = []
+    for i in range(1, 11):
+        # صفقات بفاصل 3 دقائق
+        trade_time = base_time + timedelta(minutes=3 * (i - 1))
+        pair = otc_list[(i-1) % len(otc_list)]
+        data.append([i, pair, trade_time.strftime('%H:%M:%S')])
     
-    entry_time = get_next_candle_time()
+    df = pd.DataFrame(data, columns=["رقم الصفقة", "الزوج", "وقت الدخول"])
     
-    for pair in pairs:
-        # محاكاة المؤشرات الفنية
-        rsi = np.random.randint(20, 80)
-        sma_trend = np.random.choice([1, -1]) # 1 صاعد، -1 هابط
-        volatility = np.random.uniform(0.1, 3.0)
-        
-        # --- الفلترة الصارمة (لتقليل الخسائر) ---
-        # لا دخول إذا كان التذبذب عالٍ جداً أو المؤشرات متضاربة
-        if rsi < 35 and sma_trend == 1 and volatility < 2.0:
-            decision = "🟢 شراء قوي"
-        elif rsi > 65 and sma_trend == -1 and volatility < 2.0:
-            decision = "🔴 بيع قوي"
-        else:
-            decision = "⚪ انتظار (سوق غير مؤكد)"
-            
-        data.append({
-            "الزوج": pair,
-            "وقت الدخول": entry_time,
-            "RSI": rsi,
-            "القرار": decision
-        })
-    return pd.DataFrame(data)
+    # تنسيق الجدول
+    st.table(df.style.set_properties(**{'text-align': 'center'}))
+    
+    st.info("💡 نصيحة: إذا خسرت صفقتين متتاليتين، توقف فوراً عن إكمال الجدول حتى لو كان هناك صفقات متبقية.")
 
-# --- الواجهة ---
-if st.button("🚀 فحص السوق وتحليل الشمعة القادمة"):
-    df = get_market_analysis()
-    
-    # دالة التنسيق الشرطي (متوافقة مع الإصدارات الحديثة)
-    def highlight_decision(val):
-        if 'شراء' in val: return 'background-color: #d4edda; color: #155724; font-weight: bold'
-        if 'بيع' in val: return 'background-color: #f8d7da; color: #721c24; font-weight: bold'
-        return ''
-
-    # عرض الجدول
-    st.dataframe(
-        df.style.map(highlight_decision, subset=['القرار']),
-        use_container_width=True,
-        hide_index=True
-    )
-    
-    if len(df[df['القرار'] != "⚪ انتظار (سوق غير مؤكد)"]) == 0:
-        st.warning("السوق غير مستقر حالياً، لا تخاطر برأس مالك. انتظر إشارة قوية.")
-    else:
-        st.success("تم العثور على فرص مطابقة لمعايير الفلترة الرباعية.")
-
-st.sidebar.markdown(f"🕒 توقيت المنصة (UTC+3): **{(datetime.utcnow() + timedelta(hours=3)).strftime('%H:%M:%S')}**")
-st.markdown("---")
 st.markdown("""
-### 🛡️ كيف يقلل هذا النظام الخسائر؟
-* **فلتر التذبذب (Volatility):** يمنع الدخول إذا كان السوق متقلباً بشكل عشوائي.
-* **توافق المؤشرات:** لا يعطيك "شراء" إلا إذا اتفقت الـ RSI مع الاتجاه العام (SMA).
-* **دقة الوقت:** يحدد لك وقت الدخول بدقيقة ثابتة لتجنب الدخول المتأخر في الشمعة.
+### 🛡️ قواعد الجلسة:
+* **إدارة المخاطر:** لا تضع أكثر من 2-5% من رصيدك في الصفقة الواحدة.
+* **الالتزام:** الجدول وُضع لتقليل التوتر، اتبع الترتيب بدقة.
+* **المرونة:** إذا تحرك السوق بشكل غير طبيعي، لا تتردد في تخطي "الزوج" المذكور في الجدول.
 """)
