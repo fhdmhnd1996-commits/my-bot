@@ -4,20 +4,24 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # --- إعدادات النظام ---
-st.set_page_config(page_title="Pro OTC Filter v2.2", layout="wide")
-st.title("🛡️ نظام الفلترة الرباعي (توقيت الدقيقة)")
+st.set_page_config(page_title="Pro OTC Filter v2.3", layout="wide")
+st.title("🛡️ نظام الفلترة الرباعي (توقيت UTC+3)")
 
-# دالة محاكاة البيانات مع توقيت بالدقيقة
+# دالة للحصول على توقيت UTC+3
+def get_platform_time():
+    # الحصول على التوقيت العالمي الحالي وإضافة 3 ساعات
+    return (datetime.utcnow() + timedelta(hours=3)).strftime("%H:%M")
+
+# دالة محاكاة البيانات
 def get_advanced_market_data():
     data = []
     pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
-    # الحصول على الوقت الحالي مقرباً لأقرب دقيقة
-    now = datetime.now().replace(second=0, microsecond=0)
+    current_time = get_platform_time()
     
     for pair in pairs:
         data.append({
             "الزوج": pair,
-            "وقت الدخول": now.strftime("%H:%M"),
+            "وقت الدخول": current_time,
             "RSI": np.random.randint(20, 80),
             "Volume": np.random.uniform(0.5, 2.0),
             "EMA_Signal": np.random.uniform(-0.002, 0.002),
@@ -38,7 +42,9 @@ def strict_filter(row):
         return "⚪ فلترة (تجنب الخسارة)"
 
 # --- الواجهة ---
-if st.button("🚀 فحص السوق (توقيت الدقيقة)"):
+st.write(f"🕒 توقيت النظام المعتمد: **{get_platform_time()} (UTC+3)**")
+
+if st.button("🚀 فحص السوق (توقيت UTC+3)"):
     df = get_advanced_market_data()
     df['القرار'] = df.apply(strict_filter, axis=1)
     
@@ -54,13 +60,12 @@ if st.button("🚀 فحص السوق (توقيت الدقيقة)"):
         hide_index=True
     )
     
-    # رسالة للمتداول
     if len(df[df['القرار'] != "⚪ فلترة (تجنب الخسارة)"]) == 0:
-        st.warning(f"السوق هادئ في تمام الساعة {datetime.now().strftime('%H:%M')} - يُنصح بالانتظار.")
+        st.warning(f"السوق هادئ حالياً، يُنصح بالانتظار.")
 
 st.markdown("""
 ---
-### 💡 ملاحظة للتداول:
-* تم ضبط **وقت الدخول** ليظهر بالدقيقة فقط، مما يسهل عليك مطابقة التوقيت مع منصة التداول الخاصة بك.
-* **تذكر:** إذا رأيت "فلترة"، فهذا يعني أن ظروف السوق غير متوافقة مع استراتيجيتك، وتجنب الدخول هو جزء من الربح.
+### 💡 ملاحظة:
+* تم ضبط التوقيت تلقائياً ليطابق **UTC+3**. 
+* تأكد دائماً أن الساعة المذكورة في التطبيق تتطابق مع الساعة الموجودة داخل منصة التداول الخاصة بك لضمان دقة تنفيذ الصفقات.
 """)
