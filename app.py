@@ -1,19 +1,23 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # --- إعدادات النظام ---
-st.set_page_config(page_title="Pro OTC Filter v2.1", layout="wide")
-st.title("🛡️ نظام الفلترة الرباعي الاحترافي")
+st.set_page_config(page_title="Pro OTC Filter v2.2", layout="wide")
+st.title("🛡️ نظام الفلترة الرباعي (توقيت الدقيقة)")
 
-# دالة تحاكي بيانات السوق
+# دالة محاكاة البيانات مع توقيت بالدقيقة
 def get_advanced_market_data():
     data = []
     pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
+    # الحصول على الوقت الحالي مقرباً لأقرب دقيقة
+    now = datetime.now().replace(second=0, microsecond=0)
+    
     for pair in pairs:
         data.append({
             "الزوج": pair,
+            "وقت الدخول": now.strftime("%H:%M"),
             "RSI": np.random.randint(20, 80),
             "Volume": np.random.uniform(0.5, 2.0),
             "EMA_Signal": np.random.uniform(-0.002, 0.002),
@@ -27,40 +31,36 @@ def strict_filter(row):
     is_bearish = (row['RSI'] > 30) and (row['EMA_Signal'] < 0) and (row['Sentiment'] == 'Strong Bear')
     
     if is_bullish and row['Volume'] > 1.0:
-        return "🟢 شراء (تأكيد عالٍ)"
+        return "🟢 شراء (دخول فوري)"
     elif is_bearish and row['Volume'] > 1.0:
-        return "🔴 بيع (تأكيد عالٍ)"
+        return "🔴 بيع (دخول فوري)"
     else:
         return "⚪ فلترة (تجنب الخسارة)"
 
-# --- الواجهة والتنفيذ ---
-if st.button("🚀 مسح السوق بفلترة صارمة"):
+# --- الواجهة ---
+if st.button("🚀 فحص السوق (توقيت الدقيقة)"):
     df = get_advanced_market_data()
     df['القرار'] = df.apply(strict_filter, axis=1)
     
-    # دالة التنسيق الشرطي (متوافقة مع الإصدارات الحديثة)
+    # تنسيق الألوان
     def highlight_rows(x):
-        if 'شراء' in x:
-            return 'background-color: #d4edda'
-        elif 'بيع' in x:
-            return 'background-color: #f8d7da'
+        if 'شراء' in x: return 'background-color: #d4edda'
+        elif 'بيع' in x: return 'background-color: #f8d7da'
         return ''
 
-    # عرض الجدول
     st.dataframe(
         df.style.map(highlight_rows, subset=['القرار']),
-        use_container_width=True
+        use_container_width=True,
+        hide_index=True
     )
     
-    # إحصائية سريعة
+    # رسالة للمتداول
     if len(df[df['القرار'] != "⚪ فلترة (تجنب الخسارة)"]) == 0:
-        st.warning("السوق غير مستقر حالياً، النظام منعك من الدخول لتجنب الخسارة.")
-    else:
-        st.success("تم العثور على فرص مطابقة للمعايير.")
+        st.warning(f"السوق هادئ في تمام الساعة {datetime.now().strftime('%H:%M')} - يُنصح بالانتظار.")
 
 st.markdown("""
-### ملاحظات هامة:
-* تم استخدام دالة `map` بدلاً من `applymap` لضمان عمل الكود على أحدث إصدارات مكتبة `pandas`.
-* لا تدخل أي صفقة إذا كان المؤشر يشير إلى **"فلترة"**.
-* الصبر في انتظار الإشارة الصحيحة هو سر تجنب الخسائر في سوق الـ OTC.
+---
+### 💡 ملاحظة للتداول:
+* تم ضبط **وقت الدخول** ليظهر بالدقيقة فقط، مما يسهل عليك مطابقة التوقيت مع منصة التداول الخاصة بك.
+* **تذكر:** إذا رأيت "فلترة"، فهذا يعني أن ظروف السوق غير متوافقة مع استراتيجيتك، وتجنب الدخول هو جزء من الربح.
 """)
