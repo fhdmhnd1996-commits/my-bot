@@ -6,13 +6,21 @@ from datetime import datetime, timedelta
 # إعداد الصفحة
 st.set_page_config(page_title="Professional Trading System", layout="wide")
 
-# --- دالة محاكاة بيانات السوق ---
+# --- دالة محاكاة بيانات السوق مع توقيت الدخول ---
 def fetch_market_data():
-    """هذه الدالة مهيأة لاستبدالها بـ API حقيقي لاحقاً"""
     pairs = ["EURUSD OTC", "GBPUSD OTC", "USDJPY OTC", "AUDUSD OTC", "USDCAD OTC"]
+    
+    # الحصول على الوقت الحالي (ساعة ودقيقة فقط)
+    current_time = datetime.now()
+    entry_time_str = current_time.strftime("%H:%M")
+    # وقت الانتهاء بعد دقيقة
+    expiry_time_str = (current_time + timedelta(minutes=1)).strftime("%H:%M")
+    
     data = {
         "الزوج": pairs,
-        "السعر": [np.random.uniform(1.0500, 1.1000) for _ in range(5)],
+        "سعر الدخول": [np.random.uniform(1.0500, 1.1000) for _ in range(5)],
+        "وقت الدخول": [entry_time_str] * 5,
+        "وقت الانتهاء": [expiry_time_str] * 5,
         "SR_Breaks": [np.random.choice(["Breakout Up", "Breakout Down", "None"]) for _ in range(5)],
         "Chandelier": [np.random.choice(["Bullish", "Bearish"]) for _ in range(5)],
         "Chello_Pro": [np.random.choice(["Strong Buy", "Strong Sell", "Neutral"]) for _ in range(5)]
@@ -32,25 +40,19 @@ def apply_strategy(df):
     return df
 
 # --- الواجهة الرئيسية ---
-st.title("🎯 نظام التحليل الرباعي الذكي")
+st.title("🎯 نظام التحليل الرباعي (دخول دقيق)")
 
 if st.button("🚀 تحديث وتحليل السوق"):
     raw_data = fetch_market_data()
     final_data = apply_strategy(raw_data)
     
-    # عرض النتائج في جدولين: الفرص المتاحة، وحالة السوق العامة
-    st.subheader("📊 الصفقات المؤكدة (الفرص المتاحة)")
+    st.subheader("📊 الصفقات المؤكدة")
     signals = final_data[final_data['القرار'] != "⚪ انتظار"]
     
     if not signals.empty:
-        st.dataframe(signals.style.highlight_max(axis=0), use_container_width=True)
+        # عرض البيانات الأساسية فقط بما فيها الأوقات بالدقائق
+        st.dataframe(signals[['الزوج', 'سعر الدخول', 'وقت الدخول', 'وقت الانتهاء', 'القرار']], use_container_width=True)
     else:
-        st.info("لا توجد فرص مطابقة للشروط الحالية، يرجى الانتظار.")
+        st.info("لا توجد فرص مطابقة للشروط حالياً.")
 
-    with st.expander("عرض حالة السوق الكاملة"):
-        st.table(final_data)
-
-# معلومات إضافية
-st.sidebar.markdown("### 🛠 إعدادات النظام")
-st.sidebar.write(f"آخر تحديث: {datetime.now().strftime('%H:%M:%S')}")
-st.sidebar.info("يتم تصفية الصفقات بناءً على توافق 4 مؤشرات تقنية لضمان أعلى دقة.")
+    with st.expander("
