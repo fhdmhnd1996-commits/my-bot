@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # إعداد الصفحة
-st.set_page_config(page_title="Professional Trading System", layout="wide")
+st.set_page_config(page_title="نظام التداول الرباعي المطور", layout="wide")
 
 # --- قائمة الـ 20 سوق OTC ---
 PAIRS = [
@@ -31,36 +31,37 @@ def fetch_market_data():
     }
     return pd.DataFrame(data)
 
-# --- دالة التحليل ---
+# --- دالة التحليل مع تحديد الاتجاه ---
 def apply_strategy(df):
     def check_signal(row):
         if row['SR_Breaks'] == "Breakout Up" and row['Chandelier'] == "Bullish" and row['Chello_Pro'] == "Strong Buy":
-            return "🟢 شراء"
+            return "🟢 صعود (شراء)"
         elif row['SR_Breaks'] == "Breakout Down" and row['Chandelier'] == "Bearish" and row['Chello_Pro'] == "Strong Sell":
-            return "🔴 بيع"
+            return "🔴 هبوط (بيع)"
         return "⚪ انتظار"
 
     df['القرار'] = df.apply(check_signal, axis=1)
     return df
 
 # --- الواجهة ---
-st.title("🎯 نظام التداول الرباعي (20 سوق OTC)")
+st.title("🎯 نظام التحليل الرباعي (صعود / هبوط)")
 
-if st.button("🚀 فحص الـ 20 سوق الآن"):
+if st.button("🚀 تحليل الأسواق الـ 20"):
     raw_data = fetch_market_data()
     final_data = apply_strategy(raw_data)
     
     # فلترة النتائج
     signals = final_data[final_data['القرار'] != "⚪ انتظار"]
     
-    st.subheader("📊 الفرص المتاحة حالياً")
+    st.subheader("📊 الفرص المتاحة (التوجه الحالي)")
     if not signals.empty:
-        st.dataframe(signals[['الزوج', 'سعر الدخول', 'وقت الدخول', 'وقت الانتهاء', 'القرار']], use_container_width=True)
+        # عرض النتائج مع توضيح صريح للاتجاه
+        st.dataframe(signals[['الزوج', 'سعر الدخول', 'وقت الانتهاء', 'القرار']], use_container_width=True)
     else:
-        st.warning("لا توجد فرص مطابقة للشروط حالياً. جرب التحديث مرة أخرى.")
+        st.warning("لا توجد فرص مطابقة للشروط حالياً. السوق في حالة تذبذب (انتظار).")
 
-    with st.expander("عرض حالة جميع الأسواق (20 زوج)"):
+    with st.expander("📋 عرض حالة جميع الأسواق"):
         st.table(final_data)
 
-st.sidebar.markdown("### 🕒 معلومات النظام")
-st.sidebar.write(f"التوقيت المحلي: **{datetime.now().strftime('%H:%M')}**")
+st.sidebar.markdown("### 🛠 إعدادات النظام")
+st.sidebar.write(f"تحديث: {datetime.now().strftime('%H:%M:%S')}")
