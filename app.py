@@ -1,38 +1,24 @@
 import streamlit as st
 
 # إعداد الصفحة
-st.set_page_config(page_title="Alnze System", page_icon="🛡️")
+st.set_page_config(page_title="Alnze Trading Bot", page_icon="📈")
 
-# دالة للتحقق من البيانات (يمكنك ربطها بقاعدة بيانات لاحقاً)
-def check_password(email, password):
-    # مثال بسيط: استبدل هذه القيم ببياناتك أو اربطها بقاعدة بيانات
-    return email == "admin@alnze.com" and password == "123456"
+st.title("📈 Alnze Trading Bot")
+st.write("مرحباً بك في لوحة التحكم الخاصة بك.")
 
-# إدارة حالة تسجيل الدخول
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
+# رابط تسجيل الدخول الرسمي لمنصة بوكت اوبشن
+pocket_option_url = "https://pocketoption.com/en/login/"
 
-# صفحة تسجيل الدخول
-if not st.session_state['logged_in']:
-    st.title("🛡️ بوابة دخول نظام التداول")
-    email = st.text_input("البريد الإلكتروني")
-    password = st.text_input("كلمة السر", type="password")
-    
-    if st.button("تسجيل الدخول"):
-        if check_password(email, password):
-            st.session_state['logged_in'] = True
-            st.rerun() # تحديث الصفحة للدخول للوحة التحكم
-        else:
-            st.error("البريد أو كلمة السر غير صحيحة")
-else:
-    # محتوى لوحة التحكم (يظهر فقط بعد تسجيل الدخول)
-    st.sidebar.title("إدارة النظام")
-    if st.sidebar.button("تسجيل الخروج"):
-        st.session_state['logged_in'] = False
-        st.rerun()
+# واجهة تسجيل الدخول
+st.subheader("🔐 الدخول إلى منصة التداول")
+st.write("للبدء، يرجى تسجيل الدخول إلى حسابك في منصة Pocket Option:")
 
-    st.title("📈 Alnze Trading Dashboard")
-    st.write("تم تسجيل الدخول بنجاح إلى نظام Edge Algo الرباعي.")
-    
-    # هنا ستضع واجهة التحكم في البوت لاحقاً
-    st.success("المنصة جاهزة للتشغيل")
+# زر يوجه المستخدم إلى المنصة في نافذة جديدة
+if st.button("تسجيل الدخول إلى Pocket Option"):
+    st.markdown(f'<a href="{pocket_option_url}" target="_blank" style="text-decoration:none; color:white; background-color:blue; padding:10px 20px; border-radius:5px;">اضغط هنا للتوجه لصفحة الدخول الرسمية</a>', unsafe_allow_html=True)
+
+st.divider()
+
+# زر تشغيل النظام (يظهر فقط لمن يريد البدء بعد تسجيل الدخول)
+if st.button("تشغيل العملية"):
+    st.info("نظام التداول (Edge Algo + Spot-0079 + S/R) قيد التشغيل...")
